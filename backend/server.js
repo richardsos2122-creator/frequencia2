@@ -47,7 +47,13 @@ const __dirname = path.dirname(__filename);
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
-const allowedOrigins = new Set([FRONTEND_ORIGIN]);
+const allowedOrigins = new Set(
+  String(FRONTEND_ORIGIN || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean),
+);
+const allowedOriginPatterns = [/^https:\/\/[a-z0-9-]+\.vercel\.app$/i];
 if (process.env.NODE_ENV !== 'production') {
   allowedOrigins.add('http://localhost:5173');
   allowedOrigins.add('http://127.0.0.1:5173');
@@ -55,7 +61,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.has(origin)) {
+    if (!origin || allowedOrigins.has(origin) || allowedOriginPatterns.some((pattern) => pattern.test(origin))) {
       return callback(null, true);
     }
     return callback(new Error('CORS policy does not allow this origin.'));
@@ -304,9 +310,22 @@ app.use((err, _req, res, next) => {
   }
 });
 
+let databaseInitPromise = null;
+
+async function ensureDatabaseReady() {
+  if (!databaseInitPromise) {
+    databaseInitPromise = initializeDatabase().catch((error) => {
+      databaseInitPromise = null;
+      throw error;
+    });
+  }
+
+  return databaseInitPromise;
+}
+
 async function startServer() {
   try {
-    await initializeDatabase();
+    await ensureDatabaseReady();
 
     app.listen(PORT, () => {
       console.log(`Servidor Avance ativo em http://localhost:${PORT}`);
@@ -317,4 +336,10 @@ async function startServer() {
   }
 }
 
-startServer();
+const isDirectExecution = process.argv[1] ? path.resolve(process.argv[1]) === __filename : false;
+
+if (isDirectExecution) {
+  startServer();
+}
+
+export default app;

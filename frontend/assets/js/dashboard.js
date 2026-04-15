@@ -1,4 +1,5 @@
 import { get, post } from './api.js';
+import { setupRealtime } from './realtime.js';
 import { logoutUser, requireAuth, showAlert } from './ui.js';
 
 const auth = requireAuth();
@@ -286,6 +287,16 @@ salaForm.addEventListener('submit', async (event) => {
 
 logoutBtn.addEventListener('click', async () => {
   await logoutUser((refreshToken) => post('/auth/logout', { refreshToken }));
+});
+
+setupRealtime({
+  onMessage: async (event) => {
+    if (['salas.changed', 'alunos.changed'].includes(event?.type)) {
+      await carregarSalas();
+    }
+  },
+  onFallback: carregarSalas,
+  pollIntervalMs: 45000,
 });
 
 carregarSalas();

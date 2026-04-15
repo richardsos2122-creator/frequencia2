@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import pool from '../config/db.js';
+import { broadcastRealtime } from '../realtime.js';
 import {
   getMonthDateRange,
   isValidDate,
@@ -357,6 +358,13 @@ router.post('/', async (req, res) => {
     }
 
     await connection.commit();
+
+    broadcastRealtime('frequencia.updated', {
+      salaId,
+      data,
+      totalRegistros: registros.length,
+    });
+
     return res.status(201).json({ message: 'Frequencia salva com sucesso.' });
   } catch (error) {
     if (connection && transactionStarted) {

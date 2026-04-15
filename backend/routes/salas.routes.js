@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import pool from '../config/db.js';
+import { broadcastRealtime } from '../realtime.js';
 import {
   isSafeDisplayName,
   isValidEmail,
@@ -128,6 +129,13 @@ router.post('/', async (req, res) => {
       [nome, turno],
     );
 
+    broadcastRealtime('salas.changed', {
+      action: 'created',
+      salaId: result.insertId,
+      nome,
+      turno,
+    });
+
     return res.status(201).json({
       message: 'Sala criada com sucesso.',
       salaId: result.insertId,
@@ -210,6 +218,13 @@ router.post('/:salaId/alunos', async (req, res) => {
     }
 
     await connection.commit();
+
+    broadcastRealtime('alunos.changed', {
+      action: 'created',
+      salaId,
+      alunoId: result.insertId,
+      totalResponsaveis: responsaveisNormalizados.length,
+    });
 
     return res.status(201).json({
       message: responsaveisNormalizados.length > 0

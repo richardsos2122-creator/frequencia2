@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import http from 'node:http';
 import process from 'node:process';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -12,6 +13,7 @@ import salasRoutes from './routes/salas.routes.js';
 import frequenciaRoutes from './routes/frequencia.routes.js';
 import responsaveisRoutes from './routes/responsaveis.routes.js';
 import { authenticateToken } from './middlewares/auth.middleware.js';
+import { attachRealtime } from './realtime.js';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -102,8 +104,8 @@ const cspDirectives = {
   imgSrc: ["'self'", 'data:'],
   fontSrc: ["'self'", 'data:'],
   connectSrc: isProduction
-    ? ["'self'"]
-    : ["'self'", 'http://localhost:5173', 'http://127.0.0.1:5173', 'ws://localhost:5173', 'ws://127.0.0.1:5173'],
+    ? ["'self'", 'wss:']
+    : ["'self'", 'http://localhost:5173', 'http://127.0.0.1:5173', 'ws://localhost:5173', 'ws://127.0.0.1:5173', 'ws:', 'wss:'],
   objectSrc: ["'none'"],
   frameAncestors: ["'none'"],
   baseUri: ["'self'"],
@@ -327,7 +329,10 @@ async function startServer() {
   try {
     await ensureDatabaseReady();
 
-    app.listen(PORT, () => {
+    const server = http.createServer(app);
+    attachRealtime(server);
+
+    server.listen(PORT, () => {
       console.log(`Servidor Avance ativo em http://localhost:${PORT}`);
     });
   } catch (error) {

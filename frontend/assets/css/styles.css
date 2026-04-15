@@ -556,14 +556,17 @@ button:disabled {
 .alunos-list {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .aluno-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: flex-start;
-  justify-content: space-between;
   padding: 18px;
   gap: 18px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .aluno-info {
@@ -571,6 +574,14 @@ button:disabled {
   flex-direction: column;
   gap: 6px;
   flex: 1;
+  min-width: 0;
+}
+
+.aluno-info strong,
+.aluno-info small,
+.logo-tagline,
+.hero-copy {
+  overflow-wrap: anywhere;
 }
 
 .aluno-meta {
@@ -579,20 +590,28 @@ button:disabled {
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
+  min-width: 0;
 }
 
 .status-group {
   display: flex;
   gap: 8px;
-  width: 220px;
+  width: min(220px, 100%);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.status-group button {
+  flex: 1 1 100px;
+  min-width: 0;
 }
 
 .status-btn {
   width: 100%;
   font-size: 0.88rem;
-    border: 1px solid transparent;
-    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  }
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
 
   .status-btn.active-presente {
     background: linear-gradient(135deg, #1f9d62 0%, #0c6b58 100%);
@@ -619,6 +638,9 @@ button:disabled {
     background: linear-gradient(135deg, rgba(226, 237, 255, 0.95), rgba(255, 245, 225, 0.92));
     border: 1px solid rgba(18, 107, 255, 0.12);
     margin-top: 14px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .mensal-summary-grid {
@@ -628,16 +650,26 @@ button:disabled {
     align-items: center;
   }
 
+  .mensal-summary-grid > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .mensal-matrix {
     margin-top: 16px;
     border-radius: 18px;
     overflow: hidden;
     border: 1px solid rgba(0, 0, 0, 0.08);
     background: #ffffff;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .table-scroll {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     overflow-x: auto;
   }
 
@@ -645,6 +677,7 @@ button:disabled {
     width: 100%;
     border-collapse: collapse;
     min-width: 620px;
+    table-layout: fixed;
   }
 
   .mensal-table th,
@@ -653,11 +686,19 @@ button:disabled {
     text-align: left;
     border-bottom: 1px solid rgba(0, 0, 0, 0.07);
     vertical-align: middle;
+    overflow-wrap: anywhere;
   }
 
   .mensal-table th {
     background: rgba(18, 107, 255, 0.08);
     font-weight: 700;
+  }
+
+  .ver-detalhe-btn.is-selected {
+    background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 10px 24px rgba(18, 107, 255, 0.2);
   }
 
   .mensal-table tbody tr:nth-child(even) {
@@ -749,10 +790,13 @@ button:disabled {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+  align-items: stretch;
+  flex-wrap: wrap;
 }
 
 .footer-actions button {
-  max-width: 220px;
+  flex: 1 1 220px;
+  max-width: 320px;
 }
 
 .hidden {
@@ -772,12 +816,15 @@ button:disabled {
 @media (max-width: 640px) {
   .hero-panel,
   .room-intro,
-  .aluno-item,
   .sala-card-header,
   .section-title-row {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
+  }
+
+  .aluno-item {
+    grid-template-columns: 1fr;
   }
 
   .status-group {
@@ -787,6 +834,11 @@ button:disabled {
   .topbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .topbar h1 {
+    font-size: 1.45rem;
+    overflow-wrap: anywhere;
   }
 
   .topbar-actions {
@@ -823,7 +875,7 @@ button:disabled {
 
   .container {
     width: min(100%, calc(100% - 24px));
-    padding: 18px 0 28px;
+    padding: 18px 0 104px;
   }
 
   .auth-card,
@@ -841,6 +893,17 @@ button:disabled {
     flex-direction: column;
   }
 
+  .footer-actions {
+    position: sticky;
+    bottom: 8px;
+    z-index: 20;
+    padding: 10px;
+    border-radius: 18px;
+    background: rgba(246, 244, 255, 0.94);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 24px rgba(29, 36, 64, 0.12);
+  }
+
   .auth-link-row {
     gap: 10px;
   }
@@ -849,7 +912,66 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .mensal-matrix {
+    overflow: visible;
+  }
+
+  .table-scroll {
+    overflow-x: visible;
+  }
+
   .mensal-table {
-    min-width: 560px;
+    min-width: 0;
+  }
+
+  .mensal-table,
+  .mensal-table tbody,
+  .mensal-table tr,
+  .mensal-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .mensal-table thead {
+    display: none;
+  }
+
+  .mensal-table tbody {
+    padding: 10px;
+  }
+
+  .mensal-table tr {
+    margin-bottom: 10px;
+    border: 1px solid rgba(18, 107, 255, 0.1);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  .mensal-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+
+  .mensal-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--text);
+    flex: 0 0 auto;
+  }
+
+  .mensal-table td[data-label='Ação'] {
+    padding-top: 4px;
+  }
+
+  .mensal-table td[data-label='Ação']::before {
+    display: none;
+  }
+
+  .mensal-table td button {
+    width: 100%;
   }
 }

@@ -1,4 +1,5 @@
 import { get, post } from './api.js';
+import { setupRealtime } from './realtime.js';
 import { requireAuth, showAlert as renderAlert } from './ui.js';
 
 requireAuth();
@@ -22,6 +23,12 @@ const alunoDetalheList = document.getElementById('aluno-detalhe-list');
 
 const frequenciaAtual = new Map();
 const responsaveisCache = new Map();
+const uiState = {
+  selectedAlunoId: null,
+  selectedAlunoNome: '',
+  monthlyRequestId: 0,
+  detailRequestId: 0,
+};
 mesPesquisa.value = new Date().toISOString().slice(0, 7);
 
 function escapeHtml(value) {
@@ -68,6 +75,42 @@ function formatMonthLabel(monthValue) {
   }
 }
 
+function updateSelectedDetailButtons() {
+  const detalheButtons = mensalAlunos.querySelectorAll('.ver-detalhe-btn');
+
+  detalheButtons.forEach((button) => {
+    const isSelected = Number(button.dataset.alunoId) === Number(uiState.selectedAlunoId);
+    button.classList.toggle('is-selected', isSelected);
+    button.setAttribute('aria-pressed', String(isSelected));
+    button.textContent = isSelected ? 'Selecionado' : 'Ver detalhe';
+  });
+}
+
+function clearAlunoDetalhe({ invalidateRequest = true } = {}) {
+  if (invalidateRequest) {
+    uiState.detailRequestId += 1;
+  }
+
+  uiState.selectedAlunoId = null;
+  uiState.selectedAlunoNome = '';
+  alunoDetalheSummary.innerHTML = '';
+  alunoDetalheList.innerHTML = '';
+  alunoDetalhePanel.classList.add('hidden');
+  updateSelectedDetailButtons();
+}
+
+function showAlunoDetalheLoading(alunoNome = 'Aluno') {
+  alunoDetalhePanel.classList.remove('hidden');
+  alunoDetalheSummary.innerHTML = `
+    <div class="mensal-summary-grid">
+      <div><strong>Aluno:</strong> ${escapeHtml(alunoNome)}</div>
+      <div><strong>Status:</strong> Carregando detalhes...</div>
+    </div>
+  `;
+  alunoDetalheList.innerHTML = '<div class="mensal-row"><span>Atualizando frequência individual...</span></div>';
+  updateSelectedDetailButtons();
+}
+
 function renderMonthlySummary(data) {
   const taxa = data.totais.registros
     ? Math.round((data.totais.presentes / data.totais.registros) * 100)
@@ -86,20 +129,37 @@ function renderMonthlySummary(data) {
 
   if (!Array.isArray(data.alunos) || data.alunos.length === 0) {
     mensalAlunos.innerHTML = '<div class="mensal-row"><span>Nenhum registro mensal encontrado.</span></div>';
-    alunoDetalhePanel.classList.add('hidden');
+    clearAlunoDetalhe();
     return;
   }
 
-  const rows = data.alunos.map((item) => `
-    <tr>
-      <td>${escapeHtml(item.aluno_nome)}</td>
-      <td>${escapeHtml(salaNome)}</td>
-      <td>${Number(item.presentes || 0)}</td>
-      <td>${Number(item.faltas || 0)}</td>
-      <td>${Number(item.registros || 0)}</td>
-      <td><button type="button" data-aluno-id="${Number(item.aluno_id)}" data-aluno-nome="${escapeHtml(item.aluno_nome)}" class="btn-secondary btn-small ver-detalhe-btn">Ver detalhe</button></td>
-    </tr>
-  `).join('');
+  const alunoSelecionadoAindaExiste = data.alunos.some((item) => Number(item.aluno_id) === Number(uiState.selectedAlunoId));
+  if (uiState.selectedAlunoId && !alunoSelecionadoAindaExiste) {
+    clearAlunoDetalhe({ invalidateRequest: false });
+  }
+
+  const rows = data.alunos.map((item) => {
+    const isSelected = Number(item.aluno_id) === Number(uiState.selectedAlunoId);
+
+    return `
+      <tr>
+        <td data-label="Aluno">${escapeHtml(item.aluno_nome)}</td>
+        <td data-label="Sala">${escapeHtml(salaNome)}</td>
+        <td data-label="Presenças">${Number(item.presentes || 0)}</td>
+        <td data-label="Faltas">${Number(item.faltas || 0)}</td>
+        <td data-label="Registros">${Number(item.registros || 0)}</td>
+        <td data-label="Ação">
+          <button
+            type="button"
+            data-aluno-id="${Number(item.aluno_id)}"
+            data-aluno-nome="${escapeHtml(item.aluno_nome)}"
+            class="btn-secondary btn-small ver-detalhe-btn${isSelected ? ' is-selected' : ''}"
+            aria-pressed="${isSelected}"
+          >${isSelected ? 'Selecionado' : 'Ver detalhe'}</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 
   mensalAlunos.innerHTML = `
     <div class="table-scroll">
@@ -124,14 +184,18 @@ function renderMonthlySummary(data) {
   const detalheButtons = mensalAlunos.querySelectorAll('.ver-detalhe-btn');
   detalheButtons.forEach((button) => {
     button.addEventListener('click', async () => {
-      const alunoId = button.dataset.alunoId;
+      const alunoId = Number(button.dataset.alunoId);
+      const alunoNome = button.dataset.alunoNome || 'Aluno';
+
       try {
-        await carregarDetalheAluno(alunoId);
+        await carregarDetalheAluno(alunoId, { alunoNome });
       } catch (error) {
         showAlert(error.message);
       }
     });
   });
+
+  updateSelectedDetailButtons();
 }
 
 function renderAlunoDetalhe(data) {
@@ -141,9 +205,11 @@ function renderAlunoDetalhe(data) {
     ? Math.round((data.totais.presentes / data.totais.registros) * 100)
     : 0;
 
+  uiState.selectedAlunoNome = data.alunoNome || uiState.selectedAlunoNome;
+
   alunoDetalheSummary.innerHTML = `
     <div class="mensal-summary-grid">
-      <div><strong>Aluno:</strong> ${escapeHtml(data.alunoNome)}</div>
+      <div><strong>Aluno:</strong> ${escapeHtml(uiState.selectedAlunoNome)}</div>
       <div><strong>Relatório de:</strong> ${escapeHtml(formatMonthLabel(data.mes))}</div>
       <div><strong>Presenças:</strong> ${Number(data.totais.presentes || 0)}</div>
       <div><strong>Faltas:</strong> ${Number(data.totais.faltas || 0)}</div>
@@ -154,13 +220,14 @@ function renderAlunoDetalhe(data) {
 
   if (!Array.isArray(data.dias) || data.dias.length === 0) {
     alunoDetalheList.innerHTML = '<div class="mensal-row"><span>Nenhum registro de frequencia encontrado para este aluno neste mês.</span></div>';
+    updateSelectedDetailButtons();
     return;
   }
 
   const rows = data.dias.map((item) => `
     <tr>
-      <td>${escapeHtml(item.data_aula)}</td>
-      <td>${item.status === 'presente' ? 'Presente' : 'Falta'}</td>
+      <td data-label="Data">${escapeHtml(item.data_aula)}</td>
+      <td data-label="Status">${item.status === 'presente' ? 'Presente' : 'Falta'}</td>
     </tr>
   `).join('');
 
@@ -179,14 +246,32 @@ function renderAlunoDetalhe(data) {
       </table>
     </div>
   `;
+
+  updateSelectedDetailButtons();
 }
 
-async function carregarDetalheAluno(alunoId) {
+async function carregarDetalheAluno(alunoId, { alunoNome = '', showLoading = true } = {}) {
   if (!mesPesquisa?.value) {
     throw new Error('Selecione um mês antes de ver o detalhe do aluno.');
   }
 
-  const data = await get(`/frequencia/aluno/${alunoId}/mensal?mes=${mesPesquisa.value}`);
+  const normalizedAlunoId = Number(alunoId);
+  const requestId = ++uiState.detailRequestId;
+  uiState.selectedAlunoId = normalizedAlunoId;
+  uiState.selectedAlunoNome = alunoNome || uiState.selectedAlunoNome;
+
+  if (showLoading) {
+    showAlunoDetalheLoading(uiState.selectedAlunoNome || 'Aluno');
+  } else {
+    updateSelectedDetailButtons();
+  }
+
+  const data = await get(`/frequencia/aluno/${normalizedAlunoId}/mensal?mes=${mesPesquisa.value}`);
+
+  if (requestId !== uiState.detailRequestId || normalizedAlunoId !== Number(uiState.selectedAlunoId)) {
+    return;
+  }
+
   renderAlunoDetalhe(data);
 }
 
@@ -194,16 +279,40 @@ async function carregarResumoMensal() {
   if (!mesPesquisa?.value) {
     mensalSummary.innerHTML = '<p>Selecione um mês para ver o relatório mensal.</p>';
     mensalAlunos.innerHTML = '';
+    clearAlunoDetalhe();
     return;
   }
 
+  const requestId = ++uiState.monthlyRequestId;
+  const alunoSelecionadoId = uiState.selectedAlunoId;
+  const alunoSelecionadoNome = uiState.selectedAlunoNome;
+
   try {
     const data = await get(`/frequencia/sala/${salaId}/mensal?mes=${mesPesquisa.value}`);
+
+    if (requestId !== uiState.monthlyRequestId) {
+      return;
+    }
+
     renderMonthlySummary(data);
+
+    const alunoSelecionadoAindaExiste = Array.isArray(data.alunos)
+      && data.alunos.some((item) => Number(item.aluno_id) === Number(alunoSelecionadoId));
+
+    if (alunoSelecionadoId && alunoSelecionadoAindaExiste) {
+      await carregarDetalheAluno(alunoSelecionadoId, {
+        alunoNome: alunoSelecionadoNome,
+        showLoading: false,
+      });
+    }
   } catch (error) {
+    if (requestId !== uiState.monthlyRequestId) {
+      return;
+    }
+
     mensalSummary.innerHTML = `<p class="responsavel-status responsavel-status-error">${escapeHtml(error.message)}</p>`;
     mensalAlunos.innerHTML = '';
-    alunoDetalhePanel.classList.add('hidden');
+    clearAlunoDetalhe();
   }
 }
 
@@ -357,6 +466,7 @@ async function carregarAlunos() {
 
     const statusPorAluno = new Map(frequencias.map((registro) => [registro.aluno_id, registro.status || 'presente']));
 
+    frequenciaAtual.clear();
     alunosList.innerHTML = '';
 
     if (alunos.length === 0) {
@@ -423,7 +533,26 @@ if (hasSalaId) {
     window.location.href = '/dashboard.html';
   });
 
-  mesPesquisa.addEventListener('change', carregarResumoMensal);
+  mesPesquisa.addEventListener('change', async () => {
+    clearAlunoDetalhe();
+    await carregarResumoMensal();
+  });
+
+  setupRealtime({
+    onMessage: async (event) => {
+      const eventSalaId = Number(event?.payload?.salaId || 0);
+      if (['alunos.changed', 'frequencia.updated'].includes(event?.type) && eventSalaId === Number(salaId)) {
+        await carregarAlunos();
+        await carregarResumoMensal();
+      }
+    },
+    onFallback: async () => {
+      await carregarAlunos();
+      await carregarResumoMensal();
+    },
+    pollIntervalMs: 30000,
+  });
+
   carregarAlunos();
   carregarResumoMensal();
 }

@@ -1,12 +1,8 @@
 import { post } from './api.js';
+import { SESSION_KEYS, showAlert } from './ui.js';
 
 const form = document.getElementById('login-form');
 const alertBox = document.getElementById('alert-box');
-
-function showAlert(message, type = 'error') {
-  alertBox.className = `alert ${type === 'success' ? 'alert-success' : 'alert-error'}`;
-  alertBox.textContent = message;
-}
 
 form?.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -16,11 +12,11 @@ form?.addEventListener('submit', async (event) => {
 
   try {
     const data = await post('/auth/login', { usuario, senha });
-    sessionStorage.setItem('avanceUsuario', JSON.stringify(data.usuario));
-    sessionStorage.setItem('avanceToken', data.token);
-    sessionStorage.setItem('avanceRefreshToken', data.refreshToken);
+    sessionStorage.setItem(SESSION_KEYS.user, JSON.stringify(data.usuario));
+    sessionStorage.setItem(SESSION_KEYS.token, data.token);
+    sessionStorage.setItem(SESSION_KEYS.refreshToken, data.refreshToken);
     window.location.href = '/dashboard.html';
   } catch (error) {
-    showAlert(error.message);
+    showAlert(alertBox, error.message);
   }
 });

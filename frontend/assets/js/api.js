@@ -1,18 +1,13 @@
+import { clearSessionAndRedirect, SESSION_KEYS } from './ui.js';
+
 const API_BASE = window.location.protocol === 'file:'
   ? 'http://localhost:3000/api'
   : `${window.location.origin}/api`;
 let refreshPromise = null;
 
-function clearSessionAndRedirect() {
-  sessionStorage.removeItem('avanceUsuario');
-  sessionStorage.removeItem('avanceToken');
-  sessionStorage.removeItem('avanceRefreshToken');
-  window.location.href = '/login.html';
-}
-
 function buildHeaders() {
   const headers = { 'Content-Type': 'application/json' };
-  const token = sessionStorage.getItem('avanceToken');
+  const token = sessionStorage.getItem(SESSION_KEYS.token);
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -60,7 +55,7 @@ async function refreshAccessToken() {
     return refreshPromise;
   }
 
-  const refreshToken = sessionStorage.getItem('avanceRefreshToken');
+  const refreshToken = sessionStorage.getItem(SESSION_KEYS.refreshToken);
   if (!refreshToken) {
     throw new Error('Sessao expirada. Faca login novamente.');
   }
@@ -83,11 +78,11 @@ async function refreshAccessToken() {
     }
 
     const data = await response.json();
-    sessionStorage.setItem('avanceToken', data.token);
-    sessionStorage.setItem('avanceRefreshToken', data.refreshToken);
+    sessionStorage.setItem(SESSION_KEYS.token, data.token);
+    sessionStorage.setItem(SESSION_KEYS.refreshToken, data.refreshToken);
 
     if (data.usuario) {
-      sessionStorage.setItem('avanceUsuario', JSON.stringify(data.usuario));
+      sessionStorage.setItem(SESSION_KEYS.user, JSON.stringify(data.usuario));
     }
   })();
 

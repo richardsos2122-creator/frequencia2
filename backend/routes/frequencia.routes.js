@@ -1,19 +1,13 @@
 import { Router } from 'express';
 import pool from '../config/db.js';
+import {
+  getMonthDateRange,
+  isValidDate,
+  isValidMonth,
+  parsePositiveInt,
+} from '../utils/validation.js';
 
 const router = Router();
-
-function parsePositiveInt(value) {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-  return parsed;
-}
-
-function isValidDate(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
-}
 
 router.get('/sala/:salaId/data/:data', async (req, res) => {
   try {
@@ -108,15 +102,13 @@ router.get('/', async (req, res) => {
     }
 
     if (mes) {
-      if (!/^[0-9]{4}-[0-9]{2}$/.test(mes)) {
+      if (!isValidMonth(mes)) {
         return res.status(400).json({ message: 'Mês invalido. Use o formato YYYY-MM.' });
       }
 
-      const inicioMes = `${mes}-01`;
-      const [year, month] = mes.split('-').map(Number);
-      const lastDay = new Date(year, month, 0).toISOString().slice(0, 10);
+      const { inicio, fim } = getMonthDateRange(mes);
       filters.push('f.data_aula BETWEEN ? AND ?');
-      params.push(inicioMes, lastDay);
+      params.push(inicio, fim);
     } else if (inicio || fim) {
       if ((inicio && !isValidDate(inicio)) || (fim && !isValidDate(fim))) {
         return res.status(400).json({ message: 'Datas invalidas. Use o formato YYYY-MM-DD.' });
@@ -176,13 +168,11 @@ router.get('/sala/:salaId/mensal', async (req, res) => {
       return res.status(400).json({ message: 'Sala invalida.' });
     }
 
-    if (!/^[0-9]{4}-[0-9]{2}$/.test(mes)) {
+    if (!isValidMonth(mes)) {
       return res.status(400).json({ message: 'Mês invalido. Use o formato YYYY-MM.' });
     }
 
-    const inicio = `${mes}-01`;
-    const [year, month] = mes.split('-').map(Number);
-    const lastDay = new Date(year, month, 0).toISOString().slice(0, 10);
+    const { inicio, fim: lastDay } = getMonthDateRange(mes);
 
     const [totaisRows] = await pool.query(
       `SELECT
@@ -238,7 +228,7 @@ async function handleAlunoMensal(req, res) {
       return res.status(400).json({ message: 'Sala invalida.' });
     }
 
-    if (!/^[0-9]{4}-[0-9]{2}$/.test(mes)) {
+    if (!isValidMonth(mes)) {
       return res.status(400).json({ message: 'Mês invalido. Use o formato YYYY-MM.' });
     }
 
@@ -263,9 +253,7 @@ async function handleAlunoMensal(req, res) {
       return res.status(400).json({ message: 'Aluno nao pertence a esta sala.' });
     }
 
-    const inicio = `${mes}-01`;
-    const [year, month] = mes.split('-').map(Number);
-    const lastDay = new Date(year, month, 0).toISOString().slice(0, 10);
+    const { inicio, fim: lastDay } = getMonthDateRange(mes);
 
     const [dias] = await pool.query(
       `SELECT data_aula, status

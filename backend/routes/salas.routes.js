@@ -1,31 +1,8 @@
 import { Router } from 'express';
 import pool from '../config/db.js';
+import { parsePagination, parsePositiveInt } from '../utils/validation.js';
 
 const router = Router();
-
-function parsePositiveInt(value) {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
-function parsePagination(query) {
-  const page = Number(query.page);
-  const limit = Number(query.limit);
-
-  if (!Number.isInteger(page) || page <= 0 || !Number.isInteger(limit) || limit <= 0) {
-    return null;
-  }
-
-  return {
-    page,
-    limit: Math.min(limit, 100),
-    offset: (page - 1) * Math.min(limit, 100),
-  };
-}
 
 router.get('/', async (req, res) => {
   try {

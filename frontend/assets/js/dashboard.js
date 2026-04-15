@@ -1,7 +1,8 @@
 import { get, post } from './api.js';
+import { logoutUser, requireAuth, showAlert } from './ui.js';
 
-const usuario = JSON.parse(sessionStorage.getItem('avanceUsuario') || 'null');
-const token = sessionStorage.getItem('avanceToken');
+const auth = requireAuth();
+const usuario = auth?.usuario;
 const salasGrid = document.getElementById('salas-grid');
 const usuarioNome = document.getElementById('usuario-nome');
 const alertBox = document.getElementById('alert-box');
@@ -19,20 +20,14 @@ const responsaveisAlunoList = document.getElementById('responsaveis-aluno-list')
 const addResponsavelBtn = document.getElementById('add-responsavel-btn');
 const salasTotal = document.getElementById('salas-total');
 
-if (!usuario || !token) {
-  window.location.href = '/login.html';
-}
-
 usuarioNome.textContent = usuario?.nome || 'Usuario';
 
 function showError(message) {
-  alertBox.className = 'alert alert-error';
-  alertBox.textContent = message;
+  showAlert(alertBox, message, 'error');
 }
 
 function showSuccess(message) {
-  alertBox.className = 'alert alert-success';
-  alertBox.textContent = message;
+  showAlert(alertBox, message, 'success');
 }
 
 function createResponsavelFields(index) {
@@ -267,19 +262,8 @@ salaForm.addEventListener('submit', async (event) => {
   }
 });
 
-logoutBtn.addEventListener('click', () => {
-  const refreshToken = sessionStorage.getItem('avanceRefreshToken');
-
-  if (refreshToken) {
-    post('/auth/logout', { refreshToken }).catch(() => {
-      // O frontend ainda deve encerrar sessao local mesmo se o backend falhar no logout.
-    });
-  }
-
-  sessionStorage.removeItem('avanceUsuario');
-  sessionStorage.removeItem('avanceToken');
-  sessionStorage.removeItem('avanceRefreshToken');
-  window.location.href = '/login.html';
+logoutBtn.addEventListener('click', async () => {
+  await logoutUser((refreshToken) => post('/auth/logout', { refreshToken }));
 });
 
 carregarSalas();

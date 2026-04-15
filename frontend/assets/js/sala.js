@@ -1,10 +1,7 @@
 import { get, post } from './api.js';
+import { requireAuth, showAlert as renderAlert } from './ui.js';
 
-const usuario = JSON.parse(sessionStorage.getItem('avanceUsuario') || 'null');
-const token = sessionStorage.getItem('avanceToken');
-if (!usuario || !token) {
-  window.location.href = '/login.html';
-}
+requireAuth();
 
 const params = new URLSearchParams(window.location.search);
 const salaId = params.get('salaId');
@@ -35,8 +32,7 @@ salaTitulo.textContent = `Controle de Frequencia - ${salaNome}`;
 dataAula.valueAsDate = new Date();
 
 function showAlert(message, type = 'error') {
-  alertBox.className = `alert ${type === 'success' ? 'alert-success' : 'alert-error'}`;
-  alertBox.textContent = message;
+  renderAlert(alertBox, message, type);
 }
 
 function formatMonthLabel(monthValue) {

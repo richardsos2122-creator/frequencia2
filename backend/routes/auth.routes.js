@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
+import { normalizeText } from '../utils/validation.js';
 
 const router = Router();
 
@@ -16,10 +17,6 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-me';
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
-
-function normalizeText(value) {
-  return String(value || '').trim();
-}
 
 function isValidUsername(value) {
   return value.length >= 4 && value.length <= 50 && !/\s/.test(value);

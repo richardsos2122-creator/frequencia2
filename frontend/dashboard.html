@@ -22,13 +22,40 @@
         <small>Bem-vindo, <strong id="usuario-nome"></strong></small>
       </div>
       <div class="topbar-actions">
-        <button id="toggle-sala-btn" class="btn-primary">Nova sala</button>
-        <button id="toggle-aluno-btn" class="btn-primary">Novo aluno</button>
+        <button id="toggle-sala-btn" class="btn-primary">Cadastrar sala</button>
+        <button id="toggle-aluno-btn" class="btn-primary">Cadastrar aluno</button>
         <button id="logout-btn" class="btn-secondary">Sair</button>
       </div>
     </header>
 
     <div id="alert-box" class="alert"></div>
+
+    <section class="card quick-guide">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Passo a passo</p>
+          <h2>Use o painel sem se perder</h2>
+          <p class="auth-subtitle">Primeiro crie a sala, depois cadastre os alunos e por fim abra a chamada.</p>
+        </div>
+      </div>
+      <div class="guide-grid">
+        <article class="guide-card">
+          <span class="guide-step">1</span>
+          <strong>Crie a turma</strong>
+          <p>Informe nome e turno para liberar a sala no painel.</p>
+        </article>
+        <article class="guide-card">
+          <span class="guide-step">2</span>
+          <strong>Cadastre os alunos</strong>
+          <p>Adicione alunos e responsáveis no mesmo fluxo.</p>
+        </article>
+        <article class="guide-card">
+          <span class="guide-step">3</span>
+          <strong>Lance a frequência</strong>
+          <p>Abra a sala e marque presença com poucos toques.</p>
+        </article>
+      </div>
+    </section>
 
     <section class="hero-panel card">
       <div>
@@ -115,6 +142,14 @@
 
         <button type="submit" class="btn-primary">Salvar sala</button>
       </form>
+    </section>
+
+    <section class="section-title-row">
+      <div>
+        <p class="eyebrow">Salas cadastradas</p>
+        <h2>Escolha uma turma para abrir a chamada</h2>
+      </div>
+      <p class="section-note">Toque em um card para entrar na sala.</p>
     </section>
 
     <section id="salas-grid" class="cards-grid"></section>

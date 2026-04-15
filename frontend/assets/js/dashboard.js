@@ -125,9 +125,15 @@ function createSalaCard(sala) {
   article.className = 'card sala-card';
 
   article.innerHTML = `
-    <h3>${sala.nome}</h3>
-    <p>Turno: ${sala.turno}</p>
-    <p>${sala.total_alunos} aluno(s)</p>
+    <div class="sala-card-header">
+      <div>
+        <h3>${sala.nome}</h3>
+        <p>Turno: ${sala.turno}</p>
+      </div>
+      <span class="sala-badge">${sala.total_alunos} aluno(s)</span>
+    </div>
+    <p class="sala-card-hint">Abra a sala para fazer a chamada e acompanhar o mês.</p>
+    <span class="sala-card-cta">Abrir sala →</span>
   `;
 
   article.addEventListener('click', () => {
@@ -137,12 +143,43 @@ function createSalaCard(sala) {
   return article;
 }
 
+function updateToggleButtons() {
+  const salaOpen = !salaPanel.classList.contains('hidden');
+  const alunoOpen = !alunoPanel.classList.contains('hidden');
+
+  toggleSalaBtn.textContent = salaOpen ? 'Fechar cadastro de sala' : 'Cadastrar sala';
+  toggleAlunoBtn.textContent = alunoOpen ? 'Fechar cadastro de aluno' : 'Cadastrar aluno';
+  toggleSalaBtn.setAttribute('aria-expanded', String(salaOpen));
+  toggleAlunoBtn.setAttribute('aria-expanded', String(alunoOpen));
+}
+
+function togglePanel(panelToToggle, otherPanel) {
+  otherPanel.classList.add('hidden');
+  panelToToggle.classList.toggle('hidden');
+  updateToggleButtons();
+
+  if (!panelToToggle.classList.contains('hidden')) {
+    panelToToggle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 async function carregarSalas() {
   try {
     const salas = await get('/salas');
     salasGrid.innerHTML = '';
     salasTotal.textContent = String(salas.length);
-    salas.forEach((sala) => salasGrid.appendChild(createSalaCard(sala)));
+
+    if (salas.length === 0) {
+      salasGrid.innerHTML = `
+        <article class="card empty-state">
+          <h3>Nenhuma sala cadastrada ainda</h3>
+          <p>Use o botão de cadastro para criar a primeira turma e começar a organizar a frequência.</p>
+        </article>
+      `;
+    } else {
+      salas.forEach((sala) => salasGrid.appendChild(createSalaCard(sala)));
+    }
+
     salaAlunoSelect.innerHTML = '<option value="">Selecione</option>';
     salas.forEach((sala) => {
       const option = document.createElement('option');
@@ -156,13 +193,11 @@ async function carregarSalas() {
 }
 
 toggleAlunoBtn.addEventListener('click', () => {
-  salaPanel.classList.add('hidden');
-  alunoPanel.classList.toggle('hidden');
+  togglePanel(alunoPanel, salaPanel);
 });
 
 toggleSalaBtn.addEventListener('click', () => {
-  alunoPanel.classList.add('hidden');
-  salaPanel.classList.toggle('hidden');
+  togglePanel(salaPanel, alunoPanel);
 });
 
 addResponsaveisToggle.addEventListener('change', () => {
@@ -205,6 +240,7 @@ alunoForm.addEventListener('submit', async (event) => {
     alunoForm.reset();
     resetResponsaveisForm();
     alunoPanel.classList.add('hidden');
+    updateToggleButtons();
     await carregarSalas();
   } catch (error) {
     showError(error.message);
@@ -224,6 +260,7 @@ salaForm.addEventListener('submit', async (event) => {
     showSuccess(response.message);
     salaForm.reset();
     salaPanel.classList.add('hidden');
+    updateToggleButtons();
     await carregarSalas();
   } catch (error) {
     showError(error.message);
@@ -247,3 +284,4 @@ logoutBtn.addEventListener('click', () => {
 
 carregarSalas();
 resetResponsaveisForm();
+updateToggleButtons();

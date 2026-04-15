@@ -37,7 +37,16 @@ async function parseResponse(response) {
     }
 
     if (typeof data === 'string' && data.trim()) {
+      const htmlLike = /<!doctype|<html|<body/i.test(data);
+      if (htmlLike && response.status >= 500) {
+        throw new Error('A API está indisponível no momento. Verifique se o backend foi iniciado com npm start.');
+      }
+
       throw new Error(`Erro HTTP ${response.status}: ${data.trim()}`);
+    }
+
+    if (response.status >= 500) {
+      throw new Error('A API está indisponível no momento. Verifique se o backend foi iniciado com npm start.');
     }
 
     throw new Error(`Erro na requisicao (HTTP ${response.status}).`);

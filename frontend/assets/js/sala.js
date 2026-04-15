@@ -340,10 +340,17 @@ async function carregarAlunos() {
     alunosList.innerHTML = '';
 
     if (alunos.length === 0) {
-      alunosList.innerHTML = '<p>Nenhum aluno encontrado para esta sala.</p>';
+      alunosList.innerHTML = `
+        <article class="card empty-state">
+          <h3>Nenhum aluno encontrado</h3>
+          <p>Cadastre alunos nessa turma para começar a chamada diária.</p>
+        </article>
+      `;
       salvarBtn.disabled = true;
       return;
     }
+
+    salvarBtn.disabled = false;
 
     alunos.forEach((aluno) => {
       const status = statusPorAluno.get(aluno.id) || 'presente';

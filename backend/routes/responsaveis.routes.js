@@ -1,13 +1,23 @@
 import { Router } from 'express';
 import pool from '../config/db.js';
-import { parsePagination, parsePositiveInt } from '../utils/validation.js';
+import {
+  isSafeDisplayName,
+  isValidEmail,
+  isValidPhone,
+  normalizeEmail,
+  normalizePhone,
+  normalizeText,
+  parsePagination,
+  parsePositiveInt,
+  sanitizeSearchTerm,
+} from '../utils/validation.js';
 
 const router = Router();
 
 router.get('/alunos', async (req, res) => {
   try {
     const salaId = parsePositiveInt(req.query.salaId);
-    const search = String(req.query.search || '').trim();
+    const search = sanitizeSearchTerm(req.query.search, 60);
     const includeMeta = String(req.query.includeMeta || '').toLowerCase() === 'true';
     const pagination = parsePagination(req.query);
 
@@ -98,13 +108,17 @@ router.get('/aluno/:alunoId', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const alunoId = parsePositiveInt(req.body?.alunoId);
-    const nomeResponsavel = String(req.body?.nomeResponsavel || '').trim();
-    const email = String(req.body?.email || '').trim();
-    const nomeAluno = String(req.body?.nomeAluno || '').trim();
-    const telefone = String(req.body?.telefone || '').trim();
+    const nomeResponsavel = normalizeText(req.body?.nomeResponsavel, 120);
+    const email = normalizeEmail(req.body?.email);
+    const nomeAluno = normalizeText(req.body?.nomeAluno, 120);
+    const telefone = normalizePhone(req.body?.telefone);
 
     if (!nomeResponsavel || !email || !telefone || (!alunoId && !nomeAluno)) {
       return res.status(400).json({ message: 'Preencha todos os campos do responsavel (nome, email, telefone e alunoId ou nomeAluno).' });
+    }
+
+    if (!isSafeDisplayName(nomeResponsavel, { min: 2, max: 120 }) || !isValidEmail(email) || !isValidPhone(telefone)) {
+      return res.status(400).json({ message: 'Os dados do responsavel contem valores invalidos.' });
     }
 
     let alunoIdFinal = alunoId;

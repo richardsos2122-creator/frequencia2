@@ -125,9 +125,9 @@ DB_USER=root
 DB_PASSWORD=
 DB_NAME=avance_frequencia
 DB_PORT=3306
-JWT_SECRET=troque-esta-chave-em-producao
+JWT_SECRET=gere-uma-chave-aleatoria-com-pelo-menos-32-caracteres
 JWT_EXPIRES_IN=8h
-JWT_REFRESH_SECRET=troque-esta-chave-de-refresh-em-producao
+JWT_REFRESH_SECRET=gere-outra-chave-aleatoria-diferente-com-pelo-menos-32-caracteres
 JWT_REFRESH_EXPIRES_IN=7d
 BCRYPT_SALT_ROUNDS=12
 ```
@@ -159,7 +159,7 @@ npm run dev:server
 http://localhost:3000
 ```
 
-## Usuario inicial
+## Primeiro acesso
 
-- Usuario: `admin`
-- Senha: `admin123`
+- Use a tela de cadastro para criar o primeiro usuario.
+- Evite contas padrao ou senhas previsiveis em ambiente real.

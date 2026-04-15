@@ -1,13 +1,24 @@
 import { Router } from 'express';
 import pool from '../config/db.js';
-import { parsePagination, parsePositiveInt } from '../utils/validation.js';
+import {
+  isSafeDisplayName,
+  isValidEmail,
+  isValidPhone,
+  isValidTurno,
+  normalizeEmail,
+  normalizePhone,
+  normalizeText,
+  parsePagination,
+  parsePositiveInt,
+  sanitizeSearchTerm,
+} from '../utils/validation.js';
 
 const router = Router();
 
 router.get('/', async (req, res) => {
   try {
-    const search = String(req.query.search || '').trim();
-    const turno = String(req.query.turno || '').trim();
+    const search = sanitizeSearchTerm(req.query.search, 60);
+    const turno = normalizeText(req.query.turno, 30);
     const includeMeta = String(req.query.includeMeta || '').toLowerCase() === 'true';
     const pagination = parsePagination(req.query);
     const params = [];
@@ -101,15 +112,15 @@ router.get('/:salaId', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const nome = String(req.body?.nome || '').trim();
-    const turno = String(req.body?.turno || '').trim();
+    const nome = normalizeText(req.body?.nome, 80);
+    const turno = normalizeText(req.body?.turno, 30);
 
     if (!nome || !turno) {
       return res.status(400).json({ message: 'Informe nome e turno da sala.' });
     }
 
-    if (nome.length > 80 || turno.length > 30) {
-      return res.status(400).json({ message: 'Nome ou turno da sala excede o limite permitido.' });
+    if (!isSafeDisplayName(nome, { min: 2, max: 80 }) || !isValidTurno(turno)) {
+      return res.status(400).json({ message: 'Nome ou turno da sala contem caracteres invalidos.' });
     }
 
     const [result] = await pool.query(
@@ -135,7 +146,7 @@ router.post('/:salaId/alunos', async (req, res) => {
     connection = await pool.getConnection();
 
     const salaId = parsePositiveInt(req.params.salaId);
-    const nome = String(req.body?.nome || '').trim();
+    const nome = normalizeText(req.body?.nome, 120);
     const responsaveis = Array.isArray(req.body?.responsaveis)
       ? req.body.responsaveis
       : [];
@@ -148,8 +159,8 @@ router.post('/:salaId/alunos', async (req, res) => {
       return res.status(400).json({ message: 'Informe o nome do aluno.' });
     }
 
-    if (nome.length > 120) {
-      return res.status(400).json({ message: 'Nome do aluno excede o limite permitido.' });
+    if (!isSafeDisplayName(nome, { min: 2, max: 120 })) {
+      return res.status(400).json({ message: 'Nome do aluno contem caracteres invalidos.' });
     }
 
     const [salaRows] = await connection.query('SELECT id FROM salas WHERE id = ? LIMIT 1', [salaId]);
@@ -161,16 +172,16 @@ router.post('/:salaId/alunos', async (req, res) => {
     const emailsNormalizados = new Set();
 
     for (const responsavel of responsaveis) {
-      const nomeResponsavel = String(responsavel?.nome || '').trim();
-      const email = String(responsavel?.email || '').trim();
-      const telefone = String(responsavel?.telefone || '').trim();
+      const nomeResponsavel = normalizeText(responsavel?.nome, 120);
+      const email = normalizeEmail(responsavel?.email);
+      const telefone = normalizePhone(responsavel?.telefone);
 
       if (!nomeResponsavel || !email || !telefone) {
         return res.status(400).json({ message: 'Cada responsavel precisa ter nome, email e telefone.' });
       }
 
-      if (nomeResponsavel.length > 120 || email.length > 120 || telefone.length > 25) {
-        return res.status(400).json({ message: 'Dados do responsavel excedem o limite permitido.' });
+      if (!isSafeDisplayName(nomeResponsavel, { min: 2, max: 120 }) || !isValidEmail(email) || !isValidPhone(telefone)) {
+        return res.status(400).json({ message: 'Os dados do responsavel contem valores invalidos.' });
       }
 
       const emailKey = email.toLowerCase();
@@ -229,7 +240,7 @@ router.post('/:salaId/alunos', async (req, res) => {
 router.get('/:salaId/alunos', async (req, res) => {
   try {
     const salaId = parsePositiveInt(req.params.salaId);
-    const search = String(req.query.search || '').trim();
+    const search = sanitizeSearchTerm(req.query.search, 60);
     const includeMeta = String(req.query.includeMeta || '').toLowerCase() === 'true';
     const pagination = parsePagination(req.query);
 

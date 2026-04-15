@@ -18,15 +18,33 @@ const PORT = Number(process.env.PORT || 3000);
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:3000';
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+const isProduction = process.env.NODE_ENV === 'production';
 
-if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
-  console.error('Missing JWT secrets. Configure JWT_SECRET and JWT_REFRESH_SECRET in .env.');
-  process.exit(1);
+function validateSecret(secretName, secretValue) {
+  if (!secretValue) {
+    console.error(`Missing ${secretName}. Configure it in .env before starting the server.`);
+    process.exit(1);
+  }
+
+  const looksLikePlaceholder = /(troque-esta-chave|gere-uma-chave|change-me)/i.test(secretValue);
+
+  if (isProduction && (secretValue.length < 32 || looksLikePlaceholder)) {
+    console.error(`${secretName} must be random, unique and have at least 32 characters in production.`);
+    process.exit(1);
+  }
+
+  if (!isProduction && (secretValue.length < 24 || looksLikePlaceholder)) {
+    console.warn(`[Security] ${secretName} is using a weak or placeholder value. Replace it before publishing.`);
+  }
 }
+
+validateSecret('JWT_SECRET', JWT_SECRET);
+validateSecret('JWT_REFRESH_SECRET', JWT_REFRESH_SECRET);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
 const allowedOrigins = new Set([FRONTEND_ORIGIN]);
@@ -63,13 +81,55 @@ const authLimiter = rateLimit({
   message: { message: 'Muitas tentativas de autenticação. Tente novamente mais tarde.' },
 });
 
-app.use(helmet({ crossOriginEmbedderPolicy: false }));
+const staticOptions = {
+  dotfiles: 'ignore',
+  etag: true,
+  fallthrough: true,
+  index: false,
+  maxAge: isProduction ? '1d' : 0,
+};
+
+const cspDirectives = {
+  defaultSrc: ["'self'"],
+  scriptSrc: isProduction ? ["'self'"] : ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+  styleSrc: ["'self'", "'unsafe-inline'"],
+  imgSrc: ["'self'", 'data:'],
+  fontSrc: ["'self'", 'data:'],
+  connectSrc: isProduction
+    ? ["'self'"]
+    : ["'self'", 'http://localhost:5173', 'http://127.0.0.1:5173', 'ws://localhost:5173', 'ws://127.0.0.1:5173'],
+  objectSrc: ["'none'"],
+  frameAncestors: ["'none'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+};
+
+if (isProduction) {
+  cspDirectives.upgradeInsecureRequests = [];
+}
+
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: { directives: cspDirectives },
+  referrerPolicy: { policy: 'no-referrer' },
+  hsts: isProduction
+    ? { maxAge: 15552000, includeSubDomains: true, preload: true }
+    : false,
+}));
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: false, limit: '10kb' }));
-app.use(express.static(path.join(__dirname, '../public')));
-app.use(express.static(path.join(__dirname, '../frontend')));
+app.use(express.static(path.join(__dirname, '../public'), staticOptions));
+app.use(express.static(path.join(__dirname, '../frontend'), staticOptions));
 app.use('/api', generalLimiter);
+app.use('/api', (req, res, next) => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && !req.is('application/json')) {
+    return res.status(415).json({ message: 'Envie os dados da API em JSON.' });
+  }
+
+  res.set('Cache-Control', 'no-store, max-age=0');
+  return next();
+});
 
 app.get('/favicon.ico', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/favicon.ico'));
@@ -235,8 +295,12 @@ app.use('/api/*splat', (_req, res) => {
 app.use((err, _req, res, next) => {
   void next;
   const status = err.status || err.statusCode || 500;
+  const message = status >= 500
+    ? 'Erro interno no servidor.'
+    : (err.message || 'Erro na requisicao.');
+
   if (!res.headersSent) {
-    res.status(status).json({ message: err.message || 'Erro interno no servidor.' });
+    res.status(status).json({ message });
   }
 });
 

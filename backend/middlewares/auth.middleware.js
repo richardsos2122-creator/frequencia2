@@ -1,8 +1,11 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export function authenticateToken(req, res, next) {
+  if (!JWT_SECRET) {
+    return res.status(500).json({ message: 'Configuracao de autenticacao indisponivel.' });
+  }
   const authHeader = String(req.headers.authorization || '');
 
   if (!authHeader.startsWith('Bearer ')) {

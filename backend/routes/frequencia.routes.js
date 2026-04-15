@@ -306,6 +306,10 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Envie sala, data e registros de frequencia.' });
     }
 
+    if (registros.length > 500) {
+      return res.status(400).json({ message: 'Quantidade de registros acima do limite permitido.' });
+    }
+
     connection = await pool.getConnection();
     await connection.beginTransaction();
     transactionStarted = true;

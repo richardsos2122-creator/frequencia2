@@ -1,8 +1,14 @@
+import crypto from 'node:crypto';
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
-import { normalizeText } from '../utils/validation.js';
+import {
+  isSafeDisplayName,
+  isValidPassword,
+  isValidUsername,
+  normalizeText,
+} from '../utils/validation.js';
 
 const router = Router();
 
@@ -12,18 +18,19 @@ router.get('/', (_req, res) => {
   });
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret-change-me';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
+const SAFE_SALT_ROUNDS = Number.isInteger(BCRYPT_SALT_ROUNDS)
+  ? Math.min(Math.max(BCRYPT_SALT_ROUNDS, 10), 14)
+  : 12;
+const DUMMY_PASSWORD_HASH = '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+const LEGACY_DEFAULT_PASSWORD_HASH = '$2b$10$346ymWf2ETbpMFvkK9lWuO.vR6HB302rF99eZKaIMOiAdbNLC25w.';
 
-function isValidUsername(value) {
-  return value.length >= 4 && value.length <= 50 && !/\s/.test(value);
-}
-
-function isValidPassword(value) {
-  return value.length >= 8 && /[0-9]/.test(value);
+function hashToken(token) {
+  return crypto.createHash('sha256').update(String(token)).digest('hex');
 }
 
 function buildAccessToken(user) {
@@ -52,32 +59,43 @@ function buildRefreshToken(userId) {
 async function persistRefreshToken(userId, refreshToken) {
   const decoded = jwt.decode(refreshToken);
   const expiresAt = decoded?.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const hashedToken = hashToken(refreshToken);
 
   await pool.query(
     `INSERT INTO refresh_tokens (usuario_id, token, expires_at)
      VALUES (?, ?, ?)
      ON DUPLICATE KEY UPDATE token = VALUES(token), expires_at = VALUES(expires_at), atualizado_em = CURRENT_TIMESTAMP`,
-    [userId, refreshToken, expiresAt],
+    [userId, hashedToken, expiresAt],
   );
 }
+
+router.use((_req, res, next) => {
+  res.set('Cache-Control', 'no-store, max-age=0');
+  res.set('Pragma', 'no-cache');
+  next();
+});
 
 router.post('/register', async (req, res) => {
   try {
     const { nome, usuario, senha } = req.body;
-    const nomeNormalizado = normalizeText(nome);
-    const usuarioNormalizado = normalizeText(usuario);
-    const senhaNormalizada = normalizeText(senha);
+    const nomeNormalizado = normalizeText(nome, 120);
+    const usuarioNormalizado = normalizeText(usuario, 50);
+    const senhaNormalizada = String(senha ?? '').trim();
 
     if (!nomeNormalizado || !usuarioNormalizado || !senhaNormalizada) {
       return res.status(400).json({ message: 'Preencha nome, usuario e senha.' });
     }
 
+    if (!isSafeDisplayName(nomeNormalizado, { min: 2, max: 120 })) {
+      return res.status(400).json({ message: 'Informe um nome valido usando apenas letras, numeros e pontuacao basica.' });
+    }
+
     if (!isValidUsername(usuarioNormalizado)) {
-      return res.status(400).json({ message: 'O usuario deve ter entre 4 e 50 caracteres e sem espacos.' });
+      return res.status(400).json({ message: 'O usuario deve ter entre 4 e 50 caracteres e conter apenas letras, numeros, ponto, traço ou underline.' });
     }
 
     if (!isValidPassword(senhaNormalizada)) {
-      return res.status(400).json({ message: 'A senha deve ter ao menos 8 caracteres e incluir numeros.' });
+      return res.status(400).json({ message: 'A senha deve ter ao menos 10 caracteres, incluindo numero e caractere especial.' });
     }
 
     const [exists] = await pool.query('SELECT id FROM usuarios WHERE LOWER(usuario) = LOWER(?)', [usuarioNormalizado]);
@@ -88,7 +106,7 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const senhaHash = await bcrypt.hash(senhaNormalizada, BCRYPT_SALT_ROUNDS);
+    const senhaHash = await bcrypt.hash(senhaNormalizada, SAFE_SALT_ROUNDS);
     await pool.query(
       'INSERT INTO usuarios (nome, usuario, senha_hash) VALUES (?, ?, ?)',
       [nomeNormalizado, usuarioNormalizado, senhaHash],
@@ -104,7 +122,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { usuario, senha } = req.body;
-    const usuarioNormalizado = String(usuario || '').trim();
+    const usuarioNormalizado = normalizeText(usuario, 50);
     const senhaNormalizada = String(senha || '').trim();
 
     if (!usuarioNormalizado || !senhaNormalizada) {
@@ -117,6 +135,7 @@ router.post('/login', async (req, res) => {
     );
 
     if (rows.length === 0) {
+      await bcrypt.compare(senhaNormalizada, DUMMY_PASSWORD_HASH);
       return res.status(401).json({ message: 'Usuario ou senha invalidos.' });
     }
 
@@ -125,6 +144,12 @@ router.post('/login', async (req, res) => {
 
     if (!passwordOk) {
       return res.status(401).json({ message: 'Usuario ou senha invalidos.' });
+    }
+
+    if (user.usuario?.toLowerCase() === 'admin' && user.senha_hash === LEGACY_DEFAULT_PASSWORD_HASH) {
+      return res.status(403).json({
+        message: 'A conta padrao foi bloqueada por seguranca. Cadastre um novo usuario antes de continuar.',
+      });
     }
 
     const token = buildAccessToken(user);
@@ -148,7 +173,7 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/forgot-password', async (req, res) => {
-  const { usuario } = req.body;
+  const usuario = normalizeText(req.body?.usuario, 50);
 
   if (!usuario) {
     return res.status(400).json({ message: 'Informe o usuario para recuperar a senha.' });
@@ -183,7 +208,7 @@ router.post('/refresh', async (req, res) => {
       [userId],
     );
 
-    if (tokenRows.length === 0 || tokenRows[0].token !== refreshToken) {
+    if (tokenRows.length === 0 || tokenRows[0].token !== hashToken(refreshToken)) {
       return res.status(401).json({ message: 'Refresh token nao reconhecido.' });
     }
 
@@ -230,7 +255,7 @@ router.post('/logout', async (req, res) => {
       return res.status(400).json({ message: 'Refresh token ausente.' });
     }
 
-    await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [refreshToken]);
+    await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [hashToken(refreshToken)]);
 
     return res.json({ message: 'Logout realizado com sucesso.' });
   } catch (error) {

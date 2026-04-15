@@ -58,11 +58,6 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   CONSTRAINT uq_refresh_usuario UNIQUE (usuario_id)
 );
 
-INSERT IGNORE INTO usuarios (id, nome, usuario, senha_hash)
-VALUES
-  (1, 'Administrador Avance', 'admin', '$2b$10$346ymWf2ETbpMFvkK9lWuO.vR6HB302rF99eZKaIMOiAdbNLC25w.');
--- senha padrao: admin123
-
 INSERT IGNORE INTO salas (id, nome, turno)
 VALUES
   (1, 'Sala 1 - Fundamental', 'Manha'),

@@ -16,7 +16,7 @@ Content-Type: application/json
 {
   "nome": "Usuario Teste",
   "usuario": "teste_api",
-  "senha": "123456"
+  "senha": "Senha@12345"
 }
 
 ### Login (copie o token da resposta para a variavel @token)
@@ -24,8 +24,8 @@ POST {{apiUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "usuario": "admin",
-  "senha": "admin123"
+  "usuario": "teste_api",
+  "senha": "Senha@12345"
 }
 
 ### Refresh de sessao

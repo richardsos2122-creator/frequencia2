@@ -340,6 +340,8 @@ button:disabled {
 .topbar h1 {
   margin: 0;
   font-size: 1.9rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .hero-panel,
@@ -795,6 +797,8 @@ button:disabled {
 .responsavel-status {
   color: var(--text-soft);
   font-size: 0.92rem;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .responsavel-status {
@@ -926,6 +930,34 @@ button:disabled {
     min-height: 44px;
     max-height: 54px;
     padding: 10px 14px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .topbar h1 {
+    font-size: 1.5rem;
+  }
+
+  .date-field {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .aluno-item {
+    grid-template-columns: 1fr;
+  }
+
+  .status-group {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .responsaveis-toggle {
+    width: 100%;
+    max-width: 100%;
   }
 }
 

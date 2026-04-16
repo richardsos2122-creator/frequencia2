@@ -22,6 +22,27 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 const isProduction = process.env.NODE_ENV === 'production';
 
+function isLocalDevelopmentOrigin(origin = '') {
+  try {
+    const { protocol, hostname } = new URL(origin);
+    const normalized = String(hostname || '').toLowerCase();
+
+    if (!/^https?:$/i.test(protocol)) {
+      return false;
+    }
+
+    return /^(localhost|0\.0\.0\.0)$/i.test(normalized)
+      || /^127(?:\.\d{1,3}){3}$/.test(normalized)
+      || /^192\.168(?:\.\d{1,3}){2}$/.test(normalized)
+      || /^10(?:\.\d{1,3}){3}$/.test(normalized)
+      || /^172\.(1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2}$/.test(normalized)
+      || normalized.endsWith('.local')
+      || (!normalized.includes('.') && /^[a-z0-9-]+$/i.test(normalized));
+  } catch {
+    return false;
+  }
+}
+
 function validateSecret(secretName, secretValue) {
   if (!secretValue) {
     console.error(`Missing ${secretName}. Configure it in .env before starting the server.`);
@@ -73,7 +94,10 @@ if (process.env.NODE_ENV !== 'production') {
 }
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.has(origin) || allowedOriginPatterns.some((pattern) => pattern.test(origin))) {
+    if (!origin
+      || allowedOrigins.has(origin)
+      || allowedOriginPatterns.some((pattern) => pattern.test(origin))
+      || (!isProduction && isLocalDevelopmentOrigin(origin))) {
       return callback(null, true);
     }
     return callback(new Error('CORS policy does not allow this origin.'));

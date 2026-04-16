@@ -3,34 +3,60 @@ import { clearSessionAndRedirect, SESSION_KEYS } from './ui.js';
 const LOCAL_API_BASE = 'http://localhost:3000/api';
 
 function isLocalHost(hostname = '') {
-  return /^(localhost|0\.0\.0\.0)$/i.test(hostname)
-    || /^127(?:\.\d{1,3}){3}$/.test(hostname)
-    || /^192\.168(?:\.\d{1,3}){2}$/.test(hostname)
-    || /^10(?:\.\d{1,3}){3}$/.test(hostname)
-    || /^172\.(1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2}$/.test(hostname);
+  const normalized = String(hostname || '').toLowerCase();
+
+  return /^(localhost|0\.0\.0\.0)$/i.test(normalized)
+    || /^127(?:\.\d{1,3}){3}$/.test(normalized)
+    || /^192\.168(?:\.\d{1,3}){2}$/.test(normalized)
+    || /^10(?:\.\d{1,3}){3}$/.test(normalized)
+    || /^172\.(1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2}$/.test(normalized)
+    || normalized.endsWith('.local')
+    || (!normalized.includes('.') && /^[a-z0-9-]+$/i.test(normalized));
 }
 
-function resolveApiBase() {
+function resolveApiBases() {
   const { protocol, hostname, origin, port } = window.location;
   const isWebProtocol = protocol === 'http:' || protocol === 'https:';
 
   if (!isWebProtocol) {
-    return LOCAL_API_BASE;
+    return [LOCAL_API_BASE];
   }
+
+  const normalizedHost = hostname === '0.0.0.0' ? 'localhost' : hostname;
+  const candidates = [];
 
   if (isLocalHost(hostname)) {
     if (port === '3000') {
-      return `${origin}/api`;
+      candidates.push(`${origin}/api`);
     }
 
-    return `http://${hostname}:3000/api`;
+    candidates.push(`http://${normalizedHost}:3000/api`);
+    candidates.push(LOCAL_API_BASE);
+  } else {
+    candidates.push(`${origin}/api`);
+    candidates.push(LOCAL_API_BASE);
   }
 
-  return `${origin}/api`;
+  return [...new Set(candidates.filter(Boolean))];
 }
 
-const API_BASE = resolveApiBase();
+const API_BASES = resolveApiBases();
+let activeApiBase = API_BASES[0] || LOCAL_API_BASE;
 let refreshPromise = null;
+
+async function fetchWithApiFallback(path, options = {}) {
+  for (const apiBase of [activeApiBase, ...API_BASES.filter((base) => base !== activeApiBase)]) {
+    try {
+      const response = await fetch(`${apiBase}${path}`, options);
+      activeApiBase = apiBase;
+      return response;
+    } catch {
+      // tenta a proxima base automaticamente
+    }
+  }
+
+  throw new Error('Nao foi possivel conectar ao servidor. Verifique se a API esta ativa.');
+}
 
 function buildHeaders() {
   const headers = { 'Content-Type': 'application/json' };
@@ -88,17 +114,13 @@ async function refreshAccessToken() {
   }
 
   refreshPromise = (async () => {
-    let response;
-
-    try {
-      response = await fetch(`${API_BASE}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-      });
-    } catch {
+    const response = await fetchWithApiFallback('/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    }).catch(() => {
       throw new Error('Nao foi possivel conectar ao servidor para renovar a sessao.');
-    }
+    });
 
     if (!response.ok) {
       throw new Error('Nao foi possivel renovar a sessao.');
@@ -121,19 +143,13 @@ async function refreshAccessToken() {
 }
 
 async function request(path, options = {}, shouldRetry = true) {
-  let response;
-
-  try {
-    response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers: {
-        ...buildHeaders(),
-        ...(options.headers || {}),
-      },
-    });
-  } catch {
-    throw new Error('Nao foi possivel conectar ao servidor. Verifique se a API esta ativa.');
-  }
+  const response = await fetchWithApiFallback(path, {
+    ...options,
+    headers: {
+      ...buildHeaders(),
+      ...(options.headers || {}),
+    },
+  });
 
   if (response.status === 401 && !String(path).startsWith('/auth') && shouldRetry) {
     try {

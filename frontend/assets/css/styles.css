@@ -180,19 +180,21 @@ select {
 
 button {
   width: auto;
+  min-width: 0;
   max-width: 100%;
-  padding: 0.8rem 1.1rem;
+  padding: clamp(0.65rem, 0.58rem + 0.35vw, 0.8rem) clamp(0.9rem, 0.8rem + 0.7vw, 1.2rem);
   border-radius: 0.9rem;
   border: 1px solid transparent;
-  font-size: 0.98rem;
+  font-size: clamp(0.88rem, 0.84rem + 0.2vw, 1rem);
   line-height: 1.2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 0.4rem;
   text-align: center;
   white-space: normal;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 input,
@@ -853,21 +855,23 @@ button:disabled {
 
 @media (max-width: 768px) {
   button {
+    width: auto;
     max-width: 100%;
-    font-size: 0.92rem;
-    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+    padding: 0.62rem 0.85rem;
   }
 
   .topbar-actions,
-  .status-group {
+  .status-group,
+  .footer-actions {
     width: 100%;
   }
 
   .topbar-actions button,
   .status-group button,
   .responsaveis-toggle {
-    flex: 1 1 100%;
-    width: 100%;
+    flex: 1 1 calc(50% - 0.5rem);
+    width: auto;
     max-width: 100%;
   }
 
@@ -885,14 +889,17 @@ button:disabled {
     justify-content: flex-end;
     align-items: center;
     gap: 8px;
-    width: fit-content;
+    width: 100%;
     max-width: 100%;
     margin-left: auto;
   }
 
-  .footer-actions .btn-secondary,
-  .footer-actions .btn-primary {
+  .footer-actions .btn-secondary {
     flex: 0 1 auto;
+  }
+
+  .footer-actions .btn-primary {
+    flex: 1 1 12rem;
   }
 
   .footer-actions button {
@@ -1082,15 +1089,15 @@ button:disabled {
 
 @media (max-width: 480px) {
   button {
-    font-size: 0.84rem;
-    padding: 0.58rem 0.72rem;
+    font-size: 0.82rem;
+    padding: 0.52rem 0.68rem;
     border-radius: 0.8rem;
   }
 
   .topbar-actions,
   .footer-actions,
   .status-group {
-    gap: 8px;
+    gap: 6px;
   }
 
   .btn-label-desktop {
@@ -1101,12 +1108,19 @@ button:disabled {
     display: inline;
   }
 
+  .topbar-actions button,
+  .status-group button {
+    width: 100%;
+    flex-basis: 100%;
+  }
+
   .footer-actions {
     gap: 6px;
   }
 
-  .footer-actions .btn-secondary {
-    min-width: 78px;
+  .footer-actions .btn-secondary,
+  .footer-actions .btn-primary {
+    flex: 1 1 calc(50% - 6px);
   }
 
   .topbar-actions button,

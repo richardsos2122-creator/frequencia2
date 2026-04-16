@@ -57,9 +57,19 @@ const allowedOrigins = new Set(
 );
 const allowedOriginPatterns = [/^https:\/\/[a-z0-9-]+\.vercel\.app$/i];
 if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.add('null');
+  allowedOrigins.add('http://localhost:3000');
   allowedOrigins.add('http://localhost:5173');
-  allowedOrigins.add('http://127.0.0.1:5173');
   allowedOrigins.add('http://127.0.0.1:3000');
+  allowedOrigins.add('http://127.0.0.1:5173');
+
+  allowedOriginPatterns.push(
+    /^https?:\/\/localhost(?::\d+)?$/i,
+    /^https?:\/\/127\.0\.0\.1(?::\d+)?$/i,
+    /^https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(?::\d+)?$/i,
+    /^https?:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?$/i,
+    /^https?:\/\/172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}(?::\d+)?$/i,
+  );
 }
 const corsOptions = {
   origin: (origin, callback) => {

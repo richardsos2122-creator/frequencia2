@@ -869,13 +869,24 @@ button:disabled {
   }
 
   .footer-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
     gap: 8px;
   }
 
+  .footer-actions .btn-secondary {
+    flex: 0 0 auto;
+    min-width: 88px;
+  }
+
+  .footer-actions .btn-primary {
+    flex: 1 1 auto;
+  }
+
   .footer-actions button {
-    width: 100%;
+    width: auto;
     max-width: 100%;
   }
 }
@@ -924,12 +935,15 @@ button:disabled {
   }
 
   .status-group,
-  .footer-actions button,
   .responsaveis-toggle,
   .date-field,
   .topbar-actions button {
     width: 100%;
     max-width: none;
+  }
+
+  .footer-actions button {
+    max-width: 100%;
   }
 
   .logo {
@@ -976,14 +990,12 @@ button:disabled {
   }
 
   .footer-actions {
-    position: sticky;
-    bottom: 8px;
-    z-index: 20;
-    padding: 8px;
-    border-radius: 16px;
-    background: rgba(246, 244, 255, 0.94);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 10px 24px rgba(29, 36, 64, 0.12);
+    position: static;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+    box-shadow: none;
   }
 
   .auth-link-row {
@@ -1080,13 +1092,16 @@ button:disabled {
   }
 
   .footer-actions {
-    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
-    align-items: stretch;
+    gap: 6px;
+  }
+
+  .footer-actions .btn-secondary {
+    min-width: 78px;
   }
 
   .topbar-actions button,
   .footer-actions button,
   .status-group button {
-    min-height: 2.5rem;
+    min-height: 2.2rem;
   }
 }

@@ -189,7 +189,10 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   text-align: center;
+  white-space: normal;
+  word-break: break-word;
 }
 
 input,
@@ -812,10 +815,22 @@ button:disabled {
   min-width: 0;
 }
 
+.footer-actions .btn-secondary {
+  flex: 0 1 8.5rem;
+}
+
+.footer-actions .btn-primary {
+  flex: 1 1 15rem;
+}
+
 .footer-actions button {
-  flex: 1 1 clamp(10rem, 42vw, 16rem);
   width: auto;
+  min-width: 0;
   max-width: 100%;
+}
+
+.btn-label-mobile {
+  display: none;
 }
 
 .hidden {
@@ -846,10 +861,20 @@ button:disabled {
   }
 
   .topbar-actions button,
-  .footer-actions button,
   .status-group button,
   .responsaveis-toggle {
     flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .footer-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+    gap: 8px;
+  }
+
+  .footer-actions button {
     width: 100%;
     max-width: 100%;
   }
@@ -917,7 +942,7 @@ button:disabled {
 
   .container {
     width: min(100%, calc(100% - 24px));
-    padding: 18px 0 104px;
+    padding: 18px 0 88px;
   }
 
   .auth-card,
@@ -930,8 +955,23 @@ button:disabled {
     padding: 18px;
   }
 
-  .link-row,
-  .footer-actions {
+  .logo-image {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+  }
+
+  .logo-name {
+    font-size: 1.4rem;
+  }
+
+  .promo-pill {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .link-row {
     flex-direction: column;
   }
 
@@ -939,8 +979,8 @@ button:disabled {
     position: sticky;
     bottom: 8px;
     z-index: 20;
-    padding: 10px;
-    border-radius: 18px;
+    padding: 8px;
+    border-radius: 16px;
     background: rgba(246, 244, 255, 0.94);
     backdrop-filter: blur(12px);
     box-shadow: 0 10px 24px rgba(29, 36, 64, 0.12);
@@ -1029,6 +1069,19 @@ button:disabled {
   .footer-actions,
   .status-group {
     gap: 8px;
+  }
+
+  .btn-label-desktop {
+    display: none;
+  }
+
+  .btn-label-mobile {
+    display: inline;
+  }
+
+  .footer-actions {
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    align-items: stretch;
   }
 
   .topbar-actions button,

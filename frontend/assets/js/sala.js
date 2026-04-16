@@ -520,7 +520,7 @@ if (auth && hasSalaId) {
       await carregarAlunos();
       await carregarResumoMensal();
     } catch (error) {
-      console.error('Falha ao atualizar a tela apos salvar frequencia:', error);
+      console.error('Falha ao atualizar a tela apos encia:', error);
       showAlert('Frequencia salva, mas nao foi possivel atualizar a tela. Recarregue a pagina.', 'error');
     }
   });

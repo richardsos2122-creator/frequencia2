@@ -858,10 +858,10 @@ button:disabled {
   max-width: 100%;
   min-height: 48px;
   height: auto;
-  max-height: 64px;
+  max-height: 54px;
   padding: 12px 16px;
   line-height: 1.2;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .btn-label-mobile {
@@ -909,12 +909,12 @@ button:disabled {
   }
 
   .footer-actions button {
-    flex: 0 0 auto;
-    width: 100%;
+    flex: 1 1 0;
+    width: auto;
     min-width: 0;
     max-width: 100%;
     min-height: 48px;
-    max-height: 64px;
+    max-height: 54px;
   }
 
   .btn-label-desktop {
@@ -927,10 +927,10 @@ button:disabled {
 
   .footer-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     flex-wrap: nowrap;
-    justify-content: flex-start;
-    align-items: stretch;
+    justify-content: stretch;
+    align-items: center;
     gap: 10px;
     width: 100%;
     max-width: 100%;
@@ -939,7 +939,7 @@ button:disabled {
 
   .footer-actions .btn-secondary,
   .footer-actions .btn-primary {
-    flex: 0 0 auto;
+    flex: 1 1 0;
   }
 
   .footer-actions button {
@@ -1011,9 +1011,10 @@ button:disabled {
   }
 
   .footer-actions button {
-    width: 100%;
+    width: auto;
     max-width: 100%;
     min-height: 48px;
+    max-height: 54px;
     box-shadow: 0 8px 18px rgba(30, 56, 120, 0.08);
   }
 
@@ -1216,12 +1217,12 @@ button:disabled {
   .footer-actions button,
   .footer-actions .btn-secondary,
   .footer-actions .btn-primary {
-    width: 100%;
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    width: auto;
     min-width: 0;
     max-width: 100%;
     min-height: 48px;
-    max-height: 60px;
+    max-height: 54px;
   }
 
   .auth-card {

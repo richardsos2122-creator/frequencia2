@@ -1,10 +1,25 @@
+function isLocalHost(hostname = '') {
+  return /^(localhost|0\.0\.0\.0)$/i.test(hostname)
+    || /^127(?:\.\d{1,3}){3}$/.test(hostname)
+    || /^192\.168(?:\.\d{1,3}){2}$/.test(hostname)
+    || /^10(?:\.\d{1,3}){3}$/.test(hostname)
+    || /^172\.(1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2}$/.test(hostname);
+}
+
 function buildWebSocketUrl() {
-  if (window.location.protocol === 'file:') {
+  const { protocol, hostname, host, port } = window.location;
+  const isWebProtocol = protocol === 'http:' || protocol === 'https:';
+
+  if (!isWebProtocol) {
     return 'ws://localhost:3000/ws';
   }
 
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${window.location.host}/ws`;
+  if (isLocalHost(hostname) && port !== '3000') {
+    return `ws://${hostname}:3000/ws`;
+  }
+
+  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${wsProtocol}//${host}/ws`;
 }
 
 export function setupRealtime({

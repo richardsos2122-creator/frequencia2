@@ -1,8 +1,35 @@
 import { clearSessionAndRedirect, SESSION_KEYS } from './ui.js';
 
-const API_BASE = window.location.protocol === 'file:'
-  ? 'http://localhost:3000/api'
-  : `${window.location.origin}/api`;
+const LOCAL_API_BASE = 'http://localhost:3000/api';
+
+function isLocalHost(hostname = '') {
+  return /^(localhost|0\.0\.0\.0)$/i.test(hostname)
+    || /^127(?:\.\d{1,3}){3}$/.test(hostname)
+    || /^192\.168(?:\.\d{1,3}){2}$/.test(hostname)
+    || /^10(?:\.\d{1,3}){3}$/.test(hostname)
+    || /^172\.(1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2}$/.test(hostname);
+}
+
+function resolveApiBase() {
+  const { protocol, hostname, origin, port } = window.location;
+  const isWebProtocol = protocol === 'http:' || protocol === 'https:';
+
+  if (!isWebProtocol) {
+    return LOCAL_API_BASE;
+  }
+
+  if (isLocalHost(hostname)) {
+    if (port === '3000') {
+      return `${origin}/api`;
+    }
+
+    return `http://${hostname}:3000/api`;
+  }
+
+  return `${origin}/api`;
+}
+
+const API_BASE = resolveApiBase();
 let refreshPromise = null;
 
 function buildHeaders() {

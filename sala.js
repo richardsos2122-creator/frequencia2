@@ -1,6 +1,6 @@
-import { get, post } from './api.js';
-import { setupRealtime } from './realtime.js';
-import { requireAuth, showAlert as renderAlert } from './ui.js';
+import { get, post } from './frontend/assets/js/api.js';
+import { setupRealtime } from './frontend/assets/js/realtime.js';
+import { requireAuth, showAlert as renderAlert } from './frontend/assets/js/ui.js';
 
 const auth = requireAuth();
 
@@ -15,9 +15,6 @@ const mesPesquisa = document.getElementById('mes-pesquisa');
 const mensalSummary = document.getElementById('mensal-summary');
 const mensalAlunos = document.getElementById('mensal-alunos');
 const alertBox = document.getElementById('alert-box');
-const salvarBtn = document.getElementById('salvar-btn');
-const salvarLabel = document.getElementById('salvar-label');
-const voltarBtn = document.getElementById('voltar-btn');
 const alunoDetalhePanel = document.getElementById('aluno-detalhe-panel');
 const alunoDetalheSummary = document.getElementById('aluno-detalhe-summary');
 const alunoDetalheList = document.getElementById('aluno-detalhe-list');
@@ -518,18 +515,17 @@ async function carregarAlunos() {
     showAlert(error.message);
   }
 }
+    showAlert(error.message);
+  }
+}
 
 if (auth && hasSalaId) {
   salvarBtn.addEventListener('click', async () => {
     const data = dataAula.value;
     if (!data) {
-      showAlert('Selecione a data da aula antes de salvar.');
+      showAlert('Selecione a data da aula.');
       return;
     }
-
-    salvarBtn.disabled = true;
-    salvarLabel.textContent = 'Salvando...';
-    salvarBtn.classList.add('fab-btn-saving');
 
     const registros = Array.from(frequenciaAtual.entries()).map(([alunoId, status]) => ({
       alunoId,
@@ -542,19 +538,8 @@ if (auth && hasSalaId) {
         data,
         registros,
       });
-      salvarBtn.classList.remove('fab-btn-saving');
-      salvarBtn.classList.add('fab-btn-saved');
-      salvarLabel.textContent = 'Salvo!';
       showAlert(dataResponse.message, 'success');
-      setTimeout(() => {
-        salvarBtn.classList.remove('fab-btn-saved');
-        salvarLabel.textContent = 'Salvar frequência';
-        salvarBtn.disabled = false;
-      }, 2000);
     } catch (error) {
-      salvarBtn.classList.remove('fab-btn-saving');
-      salvarLabel.textContent = 'Salvar frequência';
-      salvarBtn.disabled = false;
       showAlert(error.message);
       return;
     }
@@ -563,16 +548,17 @@ if (auth && hasSalaId) {
       await carregarAlunos();
       await carregarResumoMensal();
     } catch (error) {
-      console.error('Falha ao atualizar a tela apos salvar:', error);
+      console.error('Falha ao atualizar a tela apos encia:', error);
+      showAlert('Frequencia salva, mas nao foi possivel atualizar a tela. Recarregue a pagina.', 'error');
     }
-  });
-
-  voltarBtn.addEventListener('click', () => {
-    window.location.href = '/dashboard.html';
   });
 
   dataAula.addEventListener('change', async () => {
     await carregarAlunos();
+  });
+
+  voltarBtn.addEventListener('click', () => {
+    window.location.href = '/dashboard.html';
   });
 
   mesPesquisa.addEventListener('change', async () => {

@@ -8,30 +8,51 @@
   <link rel="stylesheet" href="/assets/css/styles.css" />
 </head>
 <body>
-  <main class="container">
-    <header class="topbar">
-      <div class="brand-block">
+  <main class="container dashboard-shell">
+    <aside class="card dashboard-sidebar">
+      <div class="dashboard-sidebar-top">
         <div class="logo">
           <img src="/logo.jpeg" alt="Logo Avance" class="logo-image" />
           <div>
             <span class="logo-name">Avance</span>
-            <small class="logo-tagline">Acompanhamento escolar com presenca e familia conectados</small>
+            <small class="logo-tagline">Gestão escolar simples e moderna</small>
           </div>
         </div>
-        <h1>Painel das salas</h1>
-        <small>Bem-vindo, <strong id="usuario-nome"></strong></small>
-      </div>
-      <div class="topbar-actions">
-        <button id="toggle-sala-btn" class="btn-primary">Cadastrar sala</button>
-        <button id="toggle-aluno-btn" class="btn-primary">Cadastrar aluno</button>
-        <a href="/calendario.html" class="btn-secondary btn-link">Calendário</a>
-        <button id="logout-btn" class="btn-secondary">Sair</button>
-      </div>
-    </header>
 
-    <div id="alert-box" class="alert"></div>
+        <nav class="sidebar-nav" aria-label="Navegação principal">
+          <a href="/dashboard.html" class="sidebar-link is-active">Painel principal</a>
+          <a href="/calendario.html" class="sidebar-link">Calendário</a>
+          <button id="toggle-sala-btn" class="sidebar-link sidebar-link-button" type="button">Cadastrar sala</button>
+          <button id="toggle-aluno-btn" class="sidebar-link sidebar-link-button" type="button">Cadastrar aluno</button>
+        </nav>
+      </div>
 
-    <section class="card action-hub">
+      <div class="sidebar-footer">
+        <div class="sidebar-user-card">
+          <span class="sidebar-user-label">Usuário logado</span>
+          <strong id="usuario-nome"></strong>
+        </div>
+        <button id="logout-btn" class="btn-secondary sidebar-logout">Sair</button>
+      </div>
+    </aside>
+
+    <section class="dashboard-content">
+      <header class="topbar dashboard-topbar">
+        <div class="brand-block">
+          <p class="eyebrow">Dashboard escolar</p>
+          <h1>Painel das salas</h1>
+          <small>Organize cadastros, chamada e calendário em um fluxo único.</small>
+        </div>
+        <div class="topbar-actions">
+          <button id="quick-sala-shortcut" class="btn-primary">Nova sala</button>
+          <button id="quick-aluno-shortcut" class="btn-primary">Novo aluno</button>
+          <a href="/calendario.html" class="btn-secondary btn-link">Calendário</a>
+        </div>
+      </header>
+
+      <div id="alert-box" class="alert"></div>
+
+      <section class="card action-hub">
       <div class="section-heading">
         <div>
           <p class="eyebrow">Ações rápidas</p>
@@ -184,15 +205,16 @@
 
     <section id="salas-grid" class="cards-grid"></section>
 
-    <section class="card quick-guide">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Agenda escolar</p>
-          <h2>Próximos eventos do calendário</h2>
-          <p class="auth-subtitle">Visualize rapidamente feriados, reuniões e provas do mês.</p>
+      <section class="card quick-guide">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Agenda escolar</p>
+            <h2>Próximos eventos do calendário</h2>
+            <p class="auth-subtitle">Visualize rapidamente feriados, reuniões e provas do mês.</p>
+          </div>
         </div>
-      </div>
-      <div id="calendar-preview" class="calendar-preview"></div>
+        <div id="calendar-preview" class="calendar-preview"></div>
+      </section>
     </section>
   </main>
 

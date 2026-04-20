@@ -22,6 +22,8 @@ const addResponsavelBtn = document.getElementById('add-responsavel-btn');
 const salasTotal = document.getElementById('salas-total');
 const quickSalaBtn = document.getElementById('quick-sala-btn');
 const quickAlunoBtn = document.getElementById('quick-aluno-btn');
+const quickSalaShortcut = document.getElementById('quick-sala-shortcut');
+const quickAlunoShortcut = document.getElementById('quick-aluno-shortcut');
 const quickChamadaBtn = document.getElementById('quick-chamada-btn');
 const calendarPreview = document.getElementById('calendar-preview');
 
@@ -284,7 +286,15 @@ quickAlunoBtn?.addEventListener('click', () => {
   togglePanel(alunoPanel, salaPanel);
 });
 
+quickAlunoShortcut?.addEventListener('click', () => {
+  togglePanel(alunoPanel, salaPanel);
+});
+
 quickSalaBtn?.addEventListener('click', () => {
+  togglePanel(salaPanel, alunoPanel);
+});
+
+quickSalaShortcut?.addEventListener('click', () => {
   togglePanel(salaPanel, alunoPanel);
 });
 

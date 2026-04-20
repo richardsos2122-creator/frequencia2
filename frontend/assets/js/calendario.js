@@ -30,6 +30,7 @@ const calendarGrid = document.getElementById('calendar-grid');
 const upcomingEvents = document.getElementById('upcoming-events');
 const legend = document.getElementById('calendar-legend');
 const modal = document.getElementById('calendar-modal');
+const modalCard = modal?.querySelector('.modal-card');
 const modalTitle = document.getElementById('modal-title');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const addEventBtn = document.getElementById('add-event-btn');
@@ -42,6 +43,7 @@ const nextMonthBtn = document.getElementById('next-month-btn');
 const todayBtn = document.getElementById('today-btn');
 const calendarForm = document.getElementById('calendar-form');
 const cancelModalBtn = document.getElementById('cancel-modal-btn');
+const saveEventBtn = document.getElementById('save-event-btn');
 const deleteEventBtn = document.getElementById('delete-event-btn');
 const tituloInput = document.getElementById('evento-titulo');
 const dataInput = document.getElementById('evento-data');
@@ -259,13 +261,40 @@ function renderCalendar() {
   });
 }
 
-function closeModal() {
-  modal.classList.add('hidden');
-  modal.setAttribute('aria-hidden', 'true');
-  calendarForm.reset();
+function resetCalendarForm() {
+  calendarForm?.reset();
   state.editingId = null;
-  deleteEventBtn.classList.add('hidden');
-  modalTitle.textContent = 'Novo evento';
+
+  if (dataInput) {
+    dataInput.value = new Date().toISOString().slice(0, 10);
+  }
+
+  if (tipoInput) {
+    tipoInput.value = 'evento';
+  }
+
+  if (deleteEventBtn) {
+    deleteEventBtn.classList.add('hidden');
+  }
+
+  if (modalTitle) {
+    modalTitle.textContent = 'Novo evento';
+  }
+}
+
+function setModalVisibility(isOpen) {
+  if (!modal) {
+    return;
+  }
+
+  modal.classList.toggle('hidden', !isOpen);
+  modal.setAttribute('aria-hidden', String(!isOpen));
+  document.body.classList.toggle('modal-open', isOpen);
+}
+
+function closeModal() {
+  setModalVisibility(false);
+  resetCalendarForm();
 }
 
 function openNewEventModal(type = 'evento') {
@@ -274,14 +303,14 @@ function openNewEventModal(type = 'evento') {
 
 function openModal(item = {}) {
   state.editingId = item.id ? Number(item.id) : null;
-  modal.classList.remove('hidden');
-  modal.setAttribute('aria-hidden', 'false');
+  setModalVisibility(true);
   modalTitle.textContent = state.editingId ? 'Editar marcação' : 'Nova marcação';
   tituloInput.value = item.titulo || '';
-  dataInput.value = item.data_evento || new Date().toISOString().slice(0, 10);
+  dataInput.value = String(item.data_evento || new Date().toISOString().slice(0, 10)).slice(0, 10);
   tipoInput.value = item.tipo || 'evento';
   descricaoInput.value = item.descricao || '';
   deleteEventBtn.classList.toggle('hidden', !state.editingId);
+  tituloInput.focus();
 }
 
 async function refreshCalendar() {
@@ -329,8 +358,16 @@ quickTodayBtn?.addEventListener('click', async () => {
 
 closeModalBtn?.addEventListener('click', closeModal);
 cancelModalBtn?.addEventListener('click', closeModal);
+modalCard?.addEventListener('click', (event) => {
+  event.stopPropagation();
+});
 modal?.addEventListener('click', (event) => {
   if (event.target === modal) {
+    closeModal();
+  }
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
     closeModal();
   }
 });
@@ -372,6 +409,17 @@ calendarForm?.addEventListener('submit', async (event) => {
     return;
   }
 
+  if (!tipo) {
+    showAlert(alertBox, 'Selecione o tipo da marcação para continuar.');
+    tipoInput.focus();
+    return;
+  }
+
+  if (saveEventBtn) {
+    saveEventBtn.disabled = true;
+    saveEventBtn.textContent = 'Salvando...';
+  }
+
   try {
     await createOrUpdateItem({
       titulo,
@@ -382,15 +430,23 @@ calendarForm?.addEventListener('submit', async (event) => {
       data_evento: data,
     });
 
-    closeModal();
-    showAlert(alertBox, wasEditing ? 'Evento atualizado com sucesso.' : 'Evento cadastrado com sucesso.', 'success');
-
     state.currentDate = new Date(`${data}T12:00:00`);
     await refreshCalendar();
+    closeModal();
+    showAlert(alertBox, wasEditing ? 'Evento atualizado com sucesso.' : 'Evento cadastrado com sucesso.', 'success');
   } catch (error) {
     showAlert(alertBox, error.message || 'Não foi possível salvar o evento.');
+  } finally {
+    if (saveEventBtn) {
+      saveEventBtn.disabled = false;
+      saveEventBtn.textContent = 'Salvar marcação';
+    }
   }
 });
+
+if (!modal || !calendarForm || !tituloInput || !dataInput || !tipoInput) {
+  console.error('Elementos essenciais do calendário não foram encontrados na tela.');
+}
 
 renderLegend();
 refreshCalendar();

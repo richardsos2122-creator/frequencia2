@@ -1,6 +1,7 @@
 # Sistema de Frequencia - Avance
 
 Sistema web para controle de frequencia de alunos do apoio escolar **Avance**.
+(Meu primeiro projeto)
 
 ## Tecnologias
 

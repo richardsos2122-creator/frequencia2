@@ -323,3 +323,68 @@ router.get('/:salaId/alunos', async (req, res) => {
 });
 
 export default router;
+
+// Renomear sala
+router.put('/:salaId', async (req, res) => {
+  try {
+    const salaId = parsePositiveInt(req.params.salaId);
+    const nome = normalizeText(req.body?.nome, 80);
+    const turno = normalizeText(req.body?.turno, 30);
+
+    if (!salaId) {
+      return res.status(400).json({ message: 'Sala inválida.' });
+    }
+    if (!nome || !turno) {
+      return res.status(400).json({ message: 'Informe nome e turno da sala.' });
+    }
+    if (!isSafeDisplayName(nome, { min: 2, max: 80 }) || !isValidTurno(turno)) {
+      return res.status(400).json({ message: 'Nome ou turno da sala contém caracteres inválidos.' });
+    }
+
+    const [result] = await pool.query(
+      'UPDATE salas SET nome = ?, turno = ? WHERE id = ?',
+      [nome, turno, salaId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Sala não encontrada.' });
+    }
+
+    broadcastRealtime('salas.changed', {
+      action: 'updated',
+      salaId,
+      nome,
+      turno,
+    });
+
+    return res.json({ message: 'Sala atualizada com sucesso.' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Erro ao atualizar sala.' });
+  }
+});
+
+// Excluir sala
+router.delete('/:salaId', async (req, res) => {
+  try {
+    const salaId = parsePositiveInt(req.params.salaId);
+    if (!salaId) {
+      return res.status(400).json({ message: 'Sala inválida.' });
+    }
+
+    const [result] = await pool.query('DELETE FROM salas WHERE id = ?', [salaId]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Sala não encontrada.' });
+    }
+
+    broadcastRealtime('salas.changed', {
+      action: 'deleted',
+      salaId,
+    });
+
+    return res.json({ message: 'Sala excluída com sucesso.' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Erro ao excluir sala.' });
+  }
+});

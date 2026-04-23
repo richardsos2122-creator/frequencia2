@@ -1,4 +1,5 @@
 import { get, post } from './api.js';
+import { put, del } from './api.js';
 import { setupRealtime } from './realtime.js';
 import { requireAuth, showAlert as renderAlert } from './ui.js';
 
@@ -9,6 +10,16 @@ const salaId = params.get('salaId');
 const salaNome = params.get('nome') || 'Sala';
 
 const salaTitulo = document.getElementById('sala-titulo');
+const btnRenameSala = document.getElementById('btn-rename-sala');
+const btnDeleteSala = document.getElementById('btn-delete-sala');
+const modalRename = document.getElementById('modal-rename');
+const modalDelete = document.getElementById('modal-delete');
+const formRenameSala = document.getElementById('form-rename-sala');
+const novoNomeInput = document.getElementById('novo-nome');
+const novoTurnoInput = document.getElementById('novo-turno');
+const cancelRenameBtn = document.getElementById('cancel-rename');
+const confirmDeleteBtn = document.getElementById('confirm-delete');
+const cancelDeleteBtn = document.getElementById('cancel-delete');
 const dataAula = document.getElementById('data-aula');
 const alunosList = document.getElementById('alunos-list');
 const mesPesquisa = document.getElementById('mes-pesquisa');
@@ -64,6 +75,75 @@ if (!hasSalaId) {
 }
 
 salaTitulo.textContent = `Controle de Frequencia - ${salaNome}`;
+// Preencher campos do modal de renomear com valores atuais
+if (btnRenameSala) {
+  btnRenameSala.addEventListener('click', async () => {
+    try {
+      const sala = await get(`/salas/${salaId}`);
+      novoNomeInput.value = sala.nome || '';
+      novoTurnoInput.value = sala.turno || '';
+      modalRename.classList.remove('hidden');
+      novoNomeInput.focus();
+    } catch (e) {
+      showAlert('Erro ao buscar dados da sala.');
+    }
+  });
+}
+
+if (cancelRenameBtn) {
+  cancelRenameBtn.addEventListener('click', () => {
+    modalRename.classList.add('hidden');
+  });
+}
+
+if (formRenameSala) {
+  formRenameSala.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btnRenameSala.disabled = true;
+    try {
+      const nome = novoNomeInput.value.trim();
+      const turno = novoTurnoInput.value.trim();
+      await put(`/salas/${salaId}`, { nome, turno });
+      showAlert('Sala renomeada com sucesso!', 'success');
+      salaTitulo.textContent = `Controle de Frequencia - ${nome}`;
+      modalRename.classList.add('hidden');
+    } catch (err) {
+      showAlert(err.message || 'Erro ao renomear sala.');
+    } finally {
+      btnRenameSala.disabled = false;
+    }
+  });
+}
+
+if (btnDeleteSala) {
+  btnDeleteSala.addEventListener('click', () => {
+    modalDelete.classList.remove('hidden');
+  });
+}
+
+if (cancelDeleteBtn) {
+  cancelDeleteBtn.addEventListener('click', () => {
+    modalDelete.classList.add('hidden');
+  });
+}
+
+if (confirmDeleteBtn) {
+  confirmDeleteBtn.addEventListener('click', async () => {
+    btnDeleteSala.disabled = true;
+    try {
+      await del(`/salas/${salaId}`);
+      showAlert('Sala excluída com sucesso!', 'success');
+      setTimeout(() => {
+        window.location.href = '/dashboard.html';
+      }, 1200);
+    } catch (err) {
+      showAlert(err.message || 'Erro ao excluir sala.');
+    } finally {
+      btnDeleteSala.disabled = false;
+      modalDelete.classList.add('hidden');
+    }
+  });
+}
 dataAula.valueAsDate = new Date();
 
 function showAlert(message, type = 'error') {

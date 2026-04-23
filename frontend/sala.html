@@ -19,6 +19,10 @@
           </div>
         </div>
         <h1 id="sala-titulo">Controle de Frequencia</h1>
+          <div class="room-actions">
+            <button id="btn-rename-sala" class="btn-secondary btn-small">Renomear Sala</button>
+            <button id="btn-delete-sala" class="btn-danger btn-small">Excluir Sala</button>
+          </div>
       </div>
       <div class="date-field room-topbar-tools">
         <label for="data-aula">Data da aula</label>
@@ -94,5 +98,34 @@
   </div>
 
   <script type="module" src="/assets/js/sala.js"></script>
+
+  <!-- Modal de renomear sala -->
+  <div id="modal-rename" class="modal hidden">
+    <div class="modal-content">
+      <h3>Renomear Sala</h3>
+      <form id="form-rename-sala">
+        <label for="novo-nome">Novo nome</label>
+        <input id="novo-nome" name="novo-nome" type="text" maxlength="80" required />
+        <label for="novo-turno">Novo turno</label>
+        <input id="novo-turno" name="novo-turno" type="text" maxlength="30" required />
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Salvar</button>
+          <button type="button" id="cancel-rename" class="btn-secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de confirmação de exclusão -->
+  <div id="modal-delete" class="modal hidden">
+    <div class="modal-content">
+      <h3>Excluir Sala</h3>
+      <p>Tem certeza que deseja excluir esta sala? Esta ação não pode ser desfeita e removerá todos os alunos e registros associados.</p>
+      <div class="modal-actions">
+        <button id="confirm-delete" class="btn-danger">Excluir</button>
+        <button id="cancel-delete" class="btn-secondary">Cancelar</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

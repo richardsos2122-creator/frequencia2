@@ -178,6 +178,51 @@ a:hover {
   min-width: 0;
 }
 
+.room-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(30, 40, 60, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.2s;
+}
+.modal.hidden {
+  display: none;
+}
+.modal-content {
+  background: var(--surface-strong);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(18, 107, 255, 0.13);
+  padding: 32px 24px 24px 24px;
+  min-width: 320px;
+  max-width: 94vw;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.modal-content h3 {
+  margin: 0 0 8px 0;
+}
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+}
+
 .auth-layout {
   min-height: 100vh;
   display: grid;

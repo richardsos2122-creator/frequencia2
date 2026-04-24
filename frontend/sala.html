@@ -97,12 +97,10 @@
     </button>
   </div>
 
-  <script type="module" src="/assets/js/sala.js"></script>
-
   <!-- Modal de renomear sala -->
-  <div id="modal-rename" class="modal hidden">
-    <div class="modal-content">
-      <h3>Renomear Sala</h3>
+  <div id="modal-rename" class="modal-overlay hidden" aria-hidden="true">
+    <div class="card modal-card" role="dialog" aria-modal="true" aria-labelledby="rename-title">
+      <h3 id="rename-title">Renomear Sala</h3>
       <form id="form-rename-sala">
         <label for="novo-nome">Novo nome</label>
         <input id="novo-nome" name="novo-nome" type="text" maxlength="80" required />
@@ -117,15 +115,17 @@
   </div>
 
   <!-- Modal de confirmação de exclusão -->
-  <div id="modal-delete" class="modal hidden">
-    <div class="modal-content">
-      <h3>Excluir Sala</h3>
+  <div id="modal-delete" class="modal-overlay hidden" aria-hidden="true">
+    <div class="card modal-card" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <h3 id="delete-title">Excluir Sala</h3>
       <p>Tem certeza que deseja excluir esta sala? Esta ação não pode ser desfeita e removerá todos os alunos e registros associados.</p>
       <div class="modal-actions">
-        <button id="confirm-delete" class="btn-danger">Excluir</button>
-        <button id="cancel-delete" class="btn-secondary">Cancelar</button>
+        <button id="confirm-delete" type="button" class="btn-danger">Excluir</button>
+        <button id="cancel-delete" type="button" class="btn-secondary">Cancelar</button>
       </div>
     </div>
   </div>
+
+  <script type="module" src="/assets/js/sala.js"></script>
 </body>
 </html>

@@ -75,6 +75,34 @@ if (!hasSalaId) {
 }
 
 salaTitulo.textContent = `Controle de Frequencia - ${salaNome}`;
+
+function openModal(modal) {
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+}
+
+function closeModal(modal) {
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+
+  if (modalRename?.classList.contains('hidden') && modalDelete?.classList.contains('hidden')) {
+    document.body.classList.remove('modal-open');
+  }
+}
+
+function setupModalDismiss(modal, onClose) {
+  if (!modal) return;
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      onClose();
+    }
+  });
+}
+
 // Preencher campos do modal de renomear com valores atuais
 if (btnRenameSala) {
   btnRenameSala.addEventListener('click', async () => {
@@ -82,7 +110,7 @@ if (btnRenameSala) {
       const sala = await get(`/salas/${salaId}`);
       novoNomeInput.value = sala.nome || '';
       novoTurnoInput.value = sala.turno || '';
-      modalRename.classList.remove('hidden');
+      openModal(modalRename);
       novoNomeInput.focus();
     } catch (e) {
       showAlert('Erro ao buscar dados da sala.');
@@ -92,7 +120,7 @@ if (btnRenameSala) {
 
 if (cancelRenameBtn) {
   cancelRenameBtn.addEventListener('click', () => {
-    modalRename.classList.add('hidden');
+    closeModal(modalRename);
   });
 }
 
@@ -106,7 +134,7 @@ if (formRenameSala) {
       await put(`/salas/${salaId}`, { nome, turno });
       showAlert('Sala renomeada com sucesso!', 'success');
       salaTitulo.textContent = `Controle de Frequencia - ${nome}`;
-      modalRename.classList.add('hidden');
+      closeModal(modalRename);
     } catch (err) {
       showAlert(err.message || 'Erro ao renomear sala.');
     } finally {
@@ -117,13 +145,13 @@ if (formRenameSala) {
 
 if (btnDeleteSala) {
   btnDeleteSala.addEventListener('click', () => {
-    modalDelete.classList.remove('hidden');
+    openModal(modalDelete);
   });
 }
 
 if (cancelDeleteBtn) {
   cancelDeleteBtn.addEventListener('click', () => {
-    modalDelete.classList.add('hidden');
+    closeModal(modalDelete);
   });
 }
 
@@ -140,10 +168,27 @@ if (confirmDeleteBtn) {
       showAlert(err.message || 'Erro ao excluir sala.');
     } finally {
       btnDeleteSala.disabled = false;
-      modalDelete.classList.add('hidden');
+      closeModal(modalDelete);
     }
   });
 }
+
+setupModalDismiss(modalRename, () => closeModal(modalRename));
+setupModalDismiss(modalDelete, () => closeModal(modalDelete));
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+
+  if (modalRename && !modalRename.classList.contains('hidden')) {
+    closeModal(modalRename);
+    return;
+  }
+
+  if (modalDelete && !modalDelete.classList.contains('hidden')) {
+    closeModal(modalDelete);
+  }
+});
+
 dataAula.valueAsDate = new Date();
 
 function showAlert(message, type = 'error') {
